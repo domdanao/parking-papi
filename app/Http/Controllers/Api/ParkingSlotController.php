@@ -4,12 +4,17 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\ParkingSlot;
+use App\Services\CacheService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Support\Facades\Validator;
 
 class ParkingSlotController extends Controller
 {
+    public function __construct(
+        private CacheService $cacheService
+    ) {}
+
     public function nearby(Request $request): JsonResponse
     {
         $validator = Validator::make($request->all(), [
@@ -35,6 +40,18 @@ class ParkingSlotController extends Controller
         $longitude = $request->longitude;
         $radius = $request->radius ?? 1000;
         $limit = $request->limit ?? 20;
+
+        // Check cache first
+        $cachedSlots = $this->cacheService->getCachedNearbySlots($latitude, $longitude, $radius);
+        if ($cachedSlots !== null) {
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'slots' => array_slice($cachedSlots, 0, $limit),
+                    'from_cache' => true
+                ]
+            ]);
+        }
 
         // For demo purposes, return a basic structure
         // In production, this would use PostGIS spatial queries
@@ -63,10 +80,20 @@ class ParkingSlotController extends Controller
                 ];
             });
 
+        // Cache the results
+        $slotsArray = $slots->toArray();
+        $this->cacheService->cacheNearbySlots($latitude, $longitude, $radius, $slotsArray);
+
+        // Also cache individual slots
+        foreach ($slots as $slot) {
+            $this->cacheService->cacheParkingSlot($slot);
+            $this->cacheService->cacheSlotAvailability($slot->id, $slot->status);
+        }
+
         return response()->json([
             'success' => true,
             'data' => [
-                'slots' => $slots,
+                'slots' => $slotsArray,
                 'total' => $slots->count(),
                 'current_location' => [
                     'latitude' => $latitude,
