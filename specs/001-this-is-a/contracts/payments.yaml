@@ -1,0 +1,780 @@
+openapi: 3.0.3
+info:
+  title: Parking Platform - Payments API
+  description: Payment processing and wallet management endpoints
+  version: 1.0.0
+
+servers:
+  - url: https://api.parkingplatform.com/v1
+
+security:
+  - bearerAuth: []
+
+paths:
+  /payments/process:
+    post:
+      summary: Process payment
+      description: Process payment for parking session or wallet top-up
+      tags:
+        - Payments
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: number
+                  format: float
+                  minimum: 0.01
+                  example: 25.00
+                currency:
+                  type: string
+                  example: "USD"
+                payment_type:
+                  type: string
+                  enum: [parking_session, wallet_topup, session_extension]
+                  example: "parking_session"
+                session_id:
+                  type: string
+                  format: uuid
+                  description: Required for parking_session and session_extension
+                payment_method:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      enum: [wallet, saved_card, new_card]
+                    payment_method_id:
+                      type: string
+                      format: uuid
+                      description: For saved payment methods
+                    card_token:
+                      type: string
+                      description: Tokenized card data for new cards
+                    save_payment_method:
+                      type: boolean
+                      default: false
+                  required:
+                    - type
+                description:
+                  type: string
+                  maxLength: 255
+                  example: "Parking payment for slot A-123"
+                metadata:
+                  type: object
+                  description: Additional payment metadata
+              required:
+                - amount
+                - currency
+                - payment_type
+                - payment_method
+      responses:
+        '200':
+          description: Payment processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      transaction:
+                        $ref: '#/components/schemas/PaymentTransaction'
+                      receipt:
+                        $ref: '#/components/schemas/PaymentReceipt'
+                      wallet_balance:
+                        type: number
+                        format: float
+                        description: Updated wallet balance (if applicable)
+        '402':
+          description: Payment failed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaymentError'
+
+  /payments/history:
+    get:
+      summary: Get payment history
+      description: Retrieve user's payment transaction history
+      tags:
+        - Payments
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: per_page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [parking_payment, wallet_topup, refund, commission]
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, processing, completed, failed, refunded]
+        - name: date_from
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: date_to
+          in: query
+          schema:
+            type: string
+            format: date
+      responses:
+        '200':
+          description: Payment history retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      transactions:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/PaymentTransaction'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+                      summary:
+                        type: object
+                        properties:
+                          total_spent:
+                            type: number
+                            format: float
+                          total_refunded:
+                            type: number
+                            format: float
+                          transaction_count:
+                            type: integer
+
+  /payments/refund:
+    post:
+      summary: Request refund
+      description: Request refund for a completed payment
+      tags:
+        - Payments
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                transaction_id:
+                  type: string
+                  format: uuid
+                refund_amount:
+                  type: number
+                  format: float
+                  minimum: 0.01
+                  description: Partial refund amount (optional, defaults to full amount)
+                reason:
+                  type: string
+                  enum: [session_cancelled, early_departure, technical_issue, customer_request]
+                  example: "early_departure"
+                reason_details:
+                  type: string
+                  maxLength: 500
+                  description: Additional details about the refund reason
+              required:
+                - transaction_id
+                - reason
+      responses:
+        '200':
+          description: Refund processed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      refund_transaction:
+                        $ref: '#/components/schemas/PaymentTransaction'
+                      original_transaction:
+                        $ref: '#/components/schemas/PaymentTransaction'
+                      refund_amount:
+                        type: number
+                        format: float
+                      processing_time:
+                        type: string
+                        description: Expected processing time
+                        example: "3-5 business days"
+
+  /wallet/balance:
+    get:
+      summary: Get wallet balance
+      description: Get current wallet balance and recent transactions
+      tags:
+        - Wallet
+      responses:
+        '200':
+          description: Wallet balance retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      wallet:
+                        $ref: '#/components/schemas/DigitalWallet'
+                      recent_transactions:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/WalletTransaction'
+                      pending_charges:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            session_id:
+                              type: string
+                              format: uuid
+                            amount:
+                              type: number
+                              format: float
+                            description:
+                              type: string
+
+  /wallet/top-up:
+    post:
+      summary: Top up wallet
+      description: Add funds to user's digital wallet
+      tags:
+        - Wallet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                amount:
+                  type: number
+                  format: float
+                  minimum: 5.00
+                  maximum: 500.00
+                  example: 50.00
+                payment_method_id:
+                  type: string
+                  format: uuid
+                  description: ID of saved payment method
+                card_token:
+                  type: string
+                  description: Tokenized card data for new payment method
+                save_payment_method:
+                  type: boolean
+                  default: false
+              oneOf:
+                - required: [amount, payment_method_id]
+                - required: [amount, card_token]
+      responses:
+        '200':
+          description: Wallet topped up successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      transaction:
+                        $ref: '#/components/schemas/PaymentTransaction'
+                      new_balance:
+                        type: number
+                        format: float
+                      bonus_applied:
+                        type: object
+                        nullable: true
+                        properties:
+                          bonus_amount:
+                            type: number
+                            format: float
+                          bonus_reason:
+                            type: string
+
+  /wallet/auto-topup:
+    put:
+      summary: Configure auto top-up
+      description: Configure automatic wallet top-up settings
+      tags:
+        - Wallet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                enabled:
+                  type: boolean
+                  example: true
+                threshold_amount:
+                  type: number
+                  format: float
+                  minimum: 5.00
+                  example: 10.00
+                  description: Trigger auto top-up when balance falls below this amount
+                topup_amount:
+                  type: number
+                  format: float
+                  minimum: 10.00
+                  maximum: 200.00
+                  example: 25.00
+                  description: Amount to add during auto top-up
+                payment_method_id:
+                  type: string
+                  format: uuid
+                  description: Default payment method for auto top-up
+              required:
+                - enabled
+      responses:
+        '200':
+          description: Auto top-up settings updated
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/DigitalWallet'
+
+  /payment-methods:
+    get:
+      summary: List payment methods
+      description: Get user's saved payment methods
+      tags:
+        - Payment Methods
+      responses:
+        '200':
+          description: Payment methods retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/PaymentMethod'
+
+    post:
+      summary: Add payment method
+      description: Add a new payment method to user's account
+      tags:
+        - Payment Methods
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                type:
+                  type: string
+                  enum: [credit_card, debit_card, bank_account]
+                card_token:
+                  type: string
+                  description: Tokenized card data from payment gateway
+                nickname:
+                  type: string
+                  maxLength: 50
+                  example: "My Visa Card"
+                  description: User-friendly name for the payment method
+                is_default:
+                  type: boolean
+                  default: false
+                billing_address:
+                  type: object
+                  properties:
+                    street:
+                      type: string
+                    city:
+                      type: string
+                    state:
+                      type: string
+                    postal_code:
+                      type: string
+                    country:
+                      type: string
+              required:
+                - type
+                - card_token
+      responses:
+        '201':
+          description: Payment method added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/PaymentMethod'
+
+  /payment-methods/{id}:
+    delete:
+      summary: Remove payment method
+      description: Remove a saved payment method
+      tags:
+        - Payment Methods
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Payment method removed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Payment method removed successfully"
+
+    put:
+      summary: Update payment method
+      description: Update payment method details
+      tags:
+        - Payment Methods
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                nickname:
+                  type: string
+                  maxLength: 50
+                is_default:
+                  type: boolean
+                billing_address:
+                  type: object
+                  properties:
+                    street:
+                      type: string
+                    city:
+                      type: string
+                    state:
+                      type: string
+                    postal_code:
+                      type: string
+                    country:
+                      type: string
+      responses:
+        '200':
+          description: Payment method updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/PaymentMethod'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+  schemas:
+    PaymentTransaction:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        session_id:
+          type: string
+          format: uuid
+          nullable: true
+        amount:
+          type: number
+          format: float
+        currency:
+          type: string
+        transaction_type:
+          type: string
+          enum: [parking_payment, wallet_topup, refund, commission, loyalty_redemption]
+        payment_method:
+          type: string
+          enum: [wallet, credit_card, debit_card]
+        status:
+          type: string
+          enum: [pending, processing, completed, failed, refunded]
+        gateway_transaction_id:
+          type: string
+          nullable: true
+        platform_commission:
+          type: number
+          format: float
+        payment_processing_fee:
+          type: number
+          format: float
+        net_amount_to_slot_owner:
+          type: number
+          format: float
+        description:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        processed_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    PaymentReceipt:
+      type: object
+      properties:
+        receipt_id:
+          type: string
+        transaction_id:
+          type: string
+          format: uuid
+        amount:
+          type: number
+          format: float
+        currency:
+          type: string
+        payment_method:
+          type: string
+        transaction_date:
+          type: string
+          format: date-time
+        description:
+          type: string
+        parking_details:
+          type: object
+          nullable: true
+          properties:
+            slot_number:
+              type: string
+            location:
+              type: string
+            duration:
+              type: string
+            rate:
+              type: number
+              format: float
+        fees_breakdown:
+          type: object
+          properties:
+            subtotal:
+              type: number
+              format: float
+            platform_fee:
+              type: number
+              format: float
+            payment_processing_fee:
+              type: number
+              format: float
+            total:
+              type: number
+              format: float
+        receipt_url:
+          type: string
+          format: uri
+          description: URL to download PDF receipt
+
+    DigitalWallet:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        balance:
+          type: number
+          format: float
+        currency:
+          type: string
+        auto_topup_enabled:
+          type: boolean
+        auto_topup_threshold:
+          type: number
+          format: float
+        auto_topup_amount:
+          type: number
+          format: float
+        default_payment_method_id:
+          type: string
+          format: uuid
+          nullable: true
+        daily_limit:
+          type: number
+          format: float
+        transaction_limit_per_session:
+          type: number
+          format: float
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    WalletTransaction:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        amount:
+          type: number
+          format: float
+        transaction_type:
+          type: string
+          enum: [topup, payment, refund, bonus]
+        description:
+          type: string
+        session_id:
+          type: string
+          format: uuid
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+
+    PaymentMethod:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [credit_card, debit_card, bank_account]
+        nickname:
+          type: string
+        last_four_digits:
+          type: string
+        card_brand:
+          type: string
+          nullable: true
+        expiry_month:
+          type: integer
+          nullable: true
+        expiry_year:
+          type: integer
+          nullable: true
+        is_default:
+          type: boolean
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+
+    PaymentError:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+              enum: [PAYMENT_FAILED, INSUFFICIENT_FUNDS, INVALID_PAYMENT_METHOD, GATEWAY_ERROR, FRAUD_DETECTED]
+            message:
+              type: string
+            gateway_error:
+              type: string
+              nullable: true
+            suggested_actions:
+              type: array
+              items:
+                type: string
+            retry_allowed:
+              type: boolean
+
+    Pagination:
+      type: object
+      properties:
+        current_page:
+          type: integer
+        per_page:
+          type: integer
+        total:
+          type: integer
+        total_pages:
+          type: integer
+        has_next:
+          type: boolean
+        has_previous:
+          type: boolean

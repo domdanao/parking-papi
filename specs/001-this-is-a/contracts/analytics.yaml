@@ -1,0 +1,985 @@
+openapi: 3.0.3
+info:
+  title: Parking Platform - Analytics API
+  description: Analytics and reporting endpoints for slot owners and platform administrators
+  version: 1.0.0
+
+servers:
+  - url: https://api.parkingplatform.com/v1
+
+security:
+  - bearerAuth: []
+
+paths:
+  /analytics/slot-performance:
+    get:
+      summary: Get slot performance metrics
+      description: Retrieve performance analytics for parking slots (slot owners and platform admins)
+      tags:
+        - Slot Analytics
+      parameters:
+        - name: slot_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Specific slot ID (optional for slot owners, returns all owned slots if not specified)
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [today, week, month, quarter, year, custom]
+            default: month
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Required if period is 'custom'
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+          description: Required if period is 'custom'
+        - name: grouping
+          in: query
+          schema:
+            type: string
+            enum: [hourly, daily, weekly, monthly]
+            default: daily
+      responses:
+        '200':
+          description: Slot performance metrics retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      overview:
+                        $ref: '#/components/schemas/SlotPerformanceOverview'
+                      time_series:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/SlotPerformanceTimeSeries'
+                      comparative_analysis:
+                        $ref: '#/components/schemas/ComparativeAnalysis'
+                      recommendations:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/PerformanceRecommendation'
+
+  /analytics/revenue:
+    get:
+      summary: Get revenue analytics
+      description: Detailed revenue breakdown and forecasting
+      tags:
+        - Revenue Analytics
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [today, week, month, quarter, year, custom]
+            default: month
+        - name: start_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: end_date
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: include_forecast
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: breakdown_by
+          in: query
+          schema:
+            type: string
+            enum: [slot, time, vehicle_type, pricing_tier]
+            default: time
+      responses:
+        '200':
+          description: Revenue analytics retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      summary:
+                        $ref: '#/components/schemas/RevenueSummary'
+                      breakdown:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/RevenueBreakdown'
+                      trends:
+                        $ref: '#/components/schemas/RevenueTrends'
+                      forecast:
+                        $ref: '#/components/schemas/RevenueForecast'
+                        nullable: true
+
+  /analytics/occupancy:
+    get:
+      summary: Get occupancy analytics
+      description: Parking slot occupancy patterns and optimization insights
+      tags:
+        - Occupancy Analytics
+      parameters:
+        - name: slot_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [today, week, month, quarter]
+            default: week
+        - name: include_heatmap
+          in: query
+          schema:
+            type: boolean
+            default: true
+        - name: include_patterns
+          in: query
+          schema:
+            type: boolean
+            default: true
+      responses:
+        '200':
+          description: Occupancy analytics retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      overall_metrics:
+                        $ref: '#/components/schemas/OccupancyMetrics'
+                      heatmap_data:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/OccupancyHeatmap'
+                        nullable: true
+                      usage_patterns:
+                        $ref: '#/components/schemas/UsagePatterns'
+                        nullable: true
+                      optimization_opportunities:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/OptimizationOpportunity'
+
+  /analytics/pricing-optimization:
+    get:
+      summary: Get pricing optimization recommendations
+      description: AI-powered pricing suggestions based on demand patterns
+      tags:
+        - Pricing Analytics
+      parameters:
+        - name: slot_id
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: forecast_days
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 30
+            default: 7
+        - name: include_competitor_analysis
+          in: query
+          schema:
+            type: boolean
+            default: true
+      responses:
+        '200':
+          description: Pricing optimization recommendations
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      current_pricing:
+                        $ref: '#/components/schemas/CurrentPricing'
+                      recommendations:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/PricingRecommendation'
+                      market_analysis:
+                        $ref: '#/components/schemas/MarketAnalysis'
+                        nullable: true
+                      impact_projection:
+                        $ref: '#/components/schemas/ImpactProjection'
+
+  /analytics/customer-behavior:
+    get:
+      summary: Get customer behavior analytics
+      description: User behavior patterns and segmentation insights
+      tags:
+        - Customer Analytics
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [week, month, quarter, year]
+            default: month
+        - name: segment_by
+          in: query
+          schema:
+            type: string
+            enum: [frequency, spend, duration, location]
+            default: frequency
+        - name: include_retention
+          in: query
+          schema:
+            type: boolean
+            default: true
+      responses:
+        '200':
+          description: Customer behavior analytics retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      user_segments:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/UserSegment'
+                      behavior_patterns:
+                        $ref: '#/components/schemas/BehaviorPatterns'
+                      retention_metrics:
+                        $ref: '#/components/schemas/RetentionMetrics'
+                        nullable: true
+                      engagement_insights:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/EngagementInsight'
+
+  /analytics/platform-health:
+    get:
+      summary: Get platform health metrics
+      description: Overall platform performance and health indicators (platform admins only)
+      tags:
+        - Platform Analytics
+      parameters:
+        - name: period
+          in: query
+          schema:
+            type: string
+            enum: [today, week, month]
+            default: today
+        - name: include_alerts
+          in: query
+          schema:
+            type: boolean
+            default: true
+      responses:
+        '200':
+          description: Platform health metrics retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      kpi_dashboard:
+                        $ref: '#/components/schemas/KPIDashboard'
+                      system_health:
+                        $ref: '#/components/schemas/SystemHealth'
+                      alerts:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/PlatformAlert'
+                        nullable: true
+                      growth_metrics:
+                        $ref: '#/components/schemas/GrowthMetrics'
+
+  /analytics/export:
+    post:
+      summary: Export analytics data
+      description: Generate and download analytics reports in various formats
+      tags:
+        - Export
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                report_type:
+                  type: string
+                  enum: [slot_performance, revenue, occupancy, customer_behavior, comprehensive]
+                format:
+                  type: string
+                  enum: [pdf, excel, csv]
+                  default: pdf
+                period:
+                  type: string
+                  enum: [week, month, quarter, year, custom]
+                start_date:
+                  type: string
+                  format: date
+                end_date:
+                  type: string
+                  format: date
+                filters:
+                  type: object
+                  properties:
+                    slot_ids:
+                      type: array
+                      items:
+                        type: string
+                        format: uuid
+                    include_charts:
+                      type: boolean
+                      default: true
+                    include_raw_data:
+                      type: boolean
+                      default: false
+              required:
+                - report_type
+                - period
+      responses:
+        '200':
+          description: Export initiated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      export_id:
+                        type: string
+                        format: uuid
+                      estimated_completion:
+                        type: string
+                        format: date-time
+                      download_url:
+                        type: string
+                        format: uri
+                        description: URL will be available when export is complete
+                      notification_sent:
+                        type: boolean
+                        description: Whether email notification will be sent
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+  schemas:
+    SlotPerformanceOverview:
+      type: object
+      properties:
+        total_sessions:
+          type: integer
+        total_revenue:
+          type: number
+          format: float
+        average_occupancy_rate:
+          type: number
+          format: float
+          description: Percentage (0-100)
+        average_session_duration:
+          type: number
+          format: float
+          description: Minutes
+        revenue_per_hour:
+          type: number
+          format: float
+        peak_hours:
+          type: array
+          items:
+            type: object
+            properties:
+              hour:
+                type: integer
+              occupancy_rate:
+                type: number
+                format: float
+        performance_score:
+          type: number
+          format: float
+          description: AI-calculated performance score (0-100)
+
+    SlotPerformanceTimeSeries:
+      type: object
+      properties:
+        period:
+          type: string
+          format: date-time
+        sessions_count:
+          type: integer
+        revenue:
+          type: number
+          format: float
+        occupancy_rate:
+          type: number
+          format: float
+        average_duration:
+          type: number
+          format: float
+        unique_users:
+          type: integer
+
+    ComparativeAnalysis:
+      type: object
+      properties:
+        vs_previous_period:
+          type: object
+          properties:
+            revenue_change:
+              type: number
+              format: float
+              description: Percentage change
+            sessions_change:
+              type: number
+              format: float
+            occupancy_change:
+              type: number
+              format: float
+        vs_market_average:
+          type: object
+          properties:
+            revenue_performance:
+              type: string
+              enum: [above_average, average, below_average]
+            occupancy_performance:
+              type: string
+              enum: [above_average, average, below_average]
+            pricing_competitiveness:
+              type: string
+              enum: [competitive, high, low]
+
+    PerformanceRecommendation:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [pricing, availability, marketing, maintenance]
+        priority:
+          type: string
+          enum: [high, medium, low]
+        title:
+          type: string
+        description:
+          type: string
+        expected_impact:
+          type: string
+        implementation_effort:
+          type: string
+          enum: [low, medium, high]
+        action_items:
+          type: array
+          items:
+            type: string
+
+    RevenueSummary:
+      type: object
+      properties:
+        total_revenue:
+          type: number
+          format: float
+        gross_revenue:
+          type: number
+          format: float
+        platform_commission:
+          type: number
+          format: float
+        net_revenue:
+          type: number
+          format: float
+        average_transaction_value:
+          type: number
+          format: float
+        transaction_count:
+          type: integer
+        growth_rate:
+          type: number
+          format: float
+          description: Percentage growth vs previous period
+
+    RevenueBreakdown:
+      type: object
+      properties:
+        category:
+          type: string
+        value:
+          type: number
+          format: float
+        percentage:
+          type: number
+          format: float
+        period:
+          type: string
+          format: date-time
+          nullable: true
+
+    RevenueTrends:
+      type: object
+      properties:
+        trend_direction:
+          type: string
+          enum: [increasing, decreasing, stable, volatile]
+        seasonal_patterns:
+          type: array
+          items:
+            type: object
+            properties:
+              season:
+                type: string
+              impact:
+                type: number
+                format: float
+        best_performing_periods:
+          type: array
+          items:
+            type: object
+            properties:
+              period:
+                type: string
+              revenue:
+                type: number
+                format: float
+
+    RevenueForecast:
+      type: object
+      properties:
+        forecast_period:
+          type: string
+        projected_revenue:
+          type: number
+          format: float
+        confidence_interval:
+          type: object
+          properties:
+            lower_bound:
+              type: number
+              format: float
+            upper_bound:
+              type: number
+              format: float
+        key_assumptions:
+          type: array
+          items:
+            type: string
+
+    OccupancyMetrics:
+      type: object
+      properties:
+        overall_occupancy_rate:
+          type: number
+          format: float
+        peak_occupancy_rate:
+          type: number
+          format: float
+        off_peak_occupancy_rate:
+          type: number
+          format: float
+        average_session_length:
+          type: number
+          format: float
+        turnover_rate:
+          type: number
+          format: float
+          description: Sessions per hour
+        utilization_efficiency:
+          type: number
+          format: float
+          description: Revenue per available hour
+
+    OccupancyHeatmap:
+      type: object
+      properties:
+        day_of_week:
+          type: integer
+          description: 0-6 (Sunday-Saturday)
+        hour:
+          type: integer
+          description: 0-23
+        occupancy_rate:
+          type: number
+          format: float
+        session_count:
+          type: integer
+        average_duration:
+          type: number
+          format: float
+
+    UsagePatterns:
+      type: object
+      properties:
+        peak_hours:
+          type: array
+          items:
+            type: object
+            properties:
+              hour:
+                type: integer
+              occupancy_rate:
+                type: number
+                format: float
+        seasonal_trends:
+          type: array
+          items:
+            type: object
+            properties:
+              month:
+                type: integer
+              average_occupancy:
+                type: number
+                format: float
+        day_of_week_patterns:
+          type: array
+          items:
+            type: object
+            properties:
+              day:
+                type: string
+              occupancy_rate:
+                type: number
+                format: float
+
+    OptimizationOpportunity:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [pricing, availability, capacity, marketing]
+        description:
+          type: string
+        potential_revenue_increase:
+          type: number
+          format: float
+        implementation_complexity:
+          type: string
+          enum: [low, medium, high]
+        timeline:
+          type: string
+
+    CurrentPricing:
+      type: object
+      properties:
+        base_rate:
+          type: number
+          format: float
+        pricing_variations:
+          type: array
+          items:
+            type: object
+            properties:
+              time_period:
+                type: string
+              rate:
+                type: number
+                format: float
+        vs_market_average:
+          type: number
+          format: float
+          description: Percentage difference
+
+    PricingRecommendation:
+      type: object
+      properties:
+        time_period:
+          type: string
+        current_rate:
+          type: number
+          format: float
+        recommended_rate:
+          type: number
+          format: float
+        confidence_score:
+          type: number
+          format: float
+          description: 0-100
+        reasoning:
+          type: string
+        expected_impact:
+          type: object
+          properties:
+            revenue_change:
+              type: number
+              format: float
+            demand_change:
+              type: number
+              format: float
+
+    MarketAnalysis:
+      type: object
+      properties:
+        nearby_competitors:
+          type: array
+          items:
+            type: object
+            properties:
+              distance_meters:
+                type: number
+                format: float
+              rate:
+                type: number
+                format: float
+              occupancy_estimate:
+                type: number
+                format: float
+        market_position:
+          type: string
+          enum: [premium, competitive, budget]
+        price_elasticity:
+          type: number
+          format: float
+
+    ImpactProjection:
+      type: object
+      properties:
+        timeframe:
+          type: string
+        projected_revenue_change:
+          type: number
+          format: float
+        projected_occupancy_change:
+          type: number
+          format: float
+        risk_factors:
+          type: array
+          items:
+            type: string
+
+    UserSegment:
+      type: object
+      properties:
+        segment_name:
+          type: string
+        user_count:
+          type: integer
+        percentage_of_total:
+          type: number
+          format: float
+        characteristics:
+          type: object
+          properties:
+            average_session_duration:
+              type: number
+              format: float
+            average_spend:
+              type: number
+              format: float
+            usage_frequency:
+              type: string
+        value_contribution:
+          type: number
+          format: float
+
+    BehaviorPatterns:
+      type: object
+      properties:
+        booking_patterns:
+          type: object
+          properties:
+            average_advance_booking:
+              type: number
+              format: float
+              description: Hours in advance
+            preferred_booking_times:
+              type: array
+              items:
+                type: object
+                properties:
+                  hour:
+                    type: integer
+                  percentage:
+                    type: number
+                    format: float
+        session_patterns:
+          type: object
+          properties:
+            most_common_duration:
+              type: number
+              format: float
+            extension_rate:
+              type: number
+              format: float
+            early_departure_rate:
+              type: number
+              format: float
+
+    RetentionMetrics:
+      type: object
+      properties:
+        new_user_retention:
+          type: object
+          properties:
+            day_1:
+              type: number
+              format: float
+            day_7:
+              type: number
+              format: float
+            day_30:
+              type: number
+              format: float
+        repeat_usage_rate:
+          type: number
+          format: float
+        churn_rate:
+          type: number
+          format: float
+        customer_lifetime_value:
+          type: number
+          format: float
+
+    EngagementInsight:
+      type: object
+      properties:
+        insight_type:
+          type: string
+          enum: [opportunity, risk, trend, recommendation]
+        title:
+          type: string
+        description:
+          type: string
+        metrics:
+          type: object
+        suggested_actions:
+          type: array
+          items:
+            type: string
+
+    KPIDashboard:
+      type: object
+      properties:
+        active_users:
+          type: integer
+        total_sessions:
+          type: integer
+        revenue:
+          type: number
+          format: float
+        new_registrations:
+          type: integer
+        platform_utilization:
+          type: number
+          format: float
+        customer_satisfaction:
+          type: number
+          format: float
+        system_uptime:
+          type: number
+          format: float
+
+    SystemHealth:
+      type: object
+      properties:
+        api_response_time:
+          type: number
+          format: float
+        error_rate:
+          type: number
+          format: float
+        database_performance:
+          type: object
+          properties:
+            avg_query_time:
+              type: number
+              format: float
+            connection_pool_usage:
+              type: number
+              format: float
+        payment_success_rate:
+          type: number
+          format: float
+
+    PlatformAlert:
+      type: object
+      properties:
+        alert_type:
+          type: string
+          enum: [performance, revenue, user_behavior, system]
+        severity:
+          type: string
+          enum: [low, medium, high, critical]
+        title:
+          type: string
+        description:
+          type: string
+        created_at:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [active, acknowledged, resolved]
+
+    GrowthMetrics:
+      type: object
+      properties:
+        user_growth_rate:
+          type: number
+          format: float
+        revenue_growth_rate:
+          type: number
+          format: float
+        slot_adoption_rate:
+          type: number
+          format: float
+        market_penetration:
+          type: number
+          format: float
+        geographic_expansion:
+          type: object
+          properties:
+            new_markets:
+              type: integer
+            coverage_percentage:
+              type: number
+              format: float

@@ -1,0 +1,658 @@
+openapi: 3.0.3
+info:
+  title: Parking Platform - QR Scanning API
+  description: QR code scanning and parking session initiation endpoints
+  version: 1.0.0
+
+servers:
+  - url: https://api.parkingplatform.com/v1
+
+security:
+  - bearerAuth: []
+
+paths:
+  /qr/scan:
+    post:
+      summary: Scan QR code
+      description: Process QR code scan and return parking slot information
+      tags:
+        - QR Scanning
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                qr_data:
+                  type: string
+                  description: Base64 encoded QR code data
+                  example: "eyJzbG90X2lkIjoiNTUwZTg0MDAtZTI5Yi00MWQ0LWE3MTYtNDQ2NjU1NDQwMDAwIn0="
+                location:
+                  type: object
+                  properties:
+                    latitude:
+                      type: number
+                      format: float
+                      minimum: -90
+                      maximum: 90
+                    longitude:
+                      type: number
+                      format: float
+                      minimum: -180
+                      maximum: 180
+                    accuracy:
+                      type: number
+                      format: float
+                      description: Location accuracy in meters
+                  required:
+                    - latitude
+                    - longitude
+                device_info:
+                  type: object
+                  properties:
+                    device_id:
+                      type: string
+                      description: Unique device identifier
+                    platform:
+                      type: string
+                      enum: [ios, android, web]
+                    app_version:
+                      type: string
+                scan_timestamp:
+                  type: string
+                  format: date-time
+                  description: When the QR code was scanned (client time)
+              required:
+                - qr_data
+                - location
+                - scan_timestamp
+      responses:
+        '200':
+          description: QR code scan successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      scan_id:
+                        type: string
+                        format: uuid
+                        description: Unique scan identifier
+                      parking_slot:
+                        $ref: '#/components/schemas/ScannedParkingSlot'
+                      session_token:
+                        type: string
+                        description: Temporary token for booking this slot
+                        example: "temp_token_abc123"
+                      expires_at:
+                        type: string
+                        format: date-time
+                        description: When the session token expires
+                      estimated_pricing:
+                        $ref: '#/components/schemas/PricingEstimate'
+        '400':
+          description: Invalid QR code
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        enum: [INVALID_QR, EXPIRED_QR, MALFORMED_QR]
+                      message:
+                        type: string
+                        example: "QR code is invalid or expired"
+                      details:
+                        type: object
+                        properties:
+                          qr_generated_at:
+                            type: string
+                            format: date-time
+                          qr_expires_at:
+                            type: string
+                            format: date-time
+        '409':
+          description: Slot unavailable
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        enum: [SLOT_OCCUPIED, SLOT_RESERVED, SLOT_MAINTENANCE, USER_HAS_ACTIVE_SESSION]
+                      message:
+                        type: string
+                        example: "Parking slot is currently occupied"
+                      details:
+                        type: object
+                        properties:
+                          current_status:
+                            type: string
+                          occupied_until:
+                            type: string
+                            format: date-time
+                            nullable: true
+                          alternative_slots:
+                            type: array
+                            items:
+                              $ref: '#/components/schemas/AlternativeSlot'
+
+  /qr/activate-payment:
+    post:
+      summary: Activate parking session with payment
+      description: Complete parking session booking by processing payment
+      tags:
+        - QR Scanning
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                scan_id:
+                  type: string
+                  format: uuid
+                  description: Scan ID from previous QR scan
+                session_token:
+                  type: string
+                  description: Session token from QR scan response
+                mobile_number:
+                  type: string
+                  pattern: '^\+[1-9]\d{1,14}$'
+                  description: For temporary users (OTP verification)
+                duration_minutes:
+                  type: integer
+                  minimum: 15
+                  maximum: 1440
+                  description: Requested parking duration
+                  example: 120
+                payment_method:
+                  type: object
+                  properties:
+                    type:
+                      type: string
+                      enum: [wallet, credit_card, debit_card]
+                    payment_method_id:
+                      type: string
+                      format: uuid
+                      description: ID of saved payment method (if applicable)
+                    card_token:
+                      type: string
+                      description: Tokenized card data for new cards
+                  required:
+                    - type
+                auto_extend:
+                  type: boolean
+                  default: false
+                  description: Automatically extend session if wallet has funds
+                notification_preferences:
+                  type: object
+                  properties:
+                    sms_alerts:
+                      type: boolean
+                      default: true
+                    push_notifications:
+                      type: boolean
+                      default: true
+                    reminder_minutes:
+                      type: array
+                      items:
+                        type: integer
+                      default: [15, 5]
+                      description: Minutes before expiry to send reminders
+              required:
+                - scan_id
+                - session_token
+                - duration_minutes
+                - payment_method
+      responses:
+        '201':
+          description: Parking session activated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      session:
+                        $ref: '#/components/schemas/ParkingSession'
+                      payment:
+                        $ref: '#/components/schemas/PaymentTransaction'
+                      qr_confirmation:
+                        type: object
+                        properties:
+                          confirmation_code:
+                            type: string
+                            example: "PARK-123456"
+                          display_instructions:
+                            type: string
+                            example: "Display this code on your dashboard if requested by enforcement"
+                      next_actions:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            action:
+                              type: string
+                              enum: [install_app, verify_mobile, add_payment_method]
+                            description:
+                              type: string
+                            url:
+                              type: string
+                              format: uri
+                              nullable: true
+        '400':
+          description: Invalid session or payment data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '402':
+          description: Payment failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        enum: [PAYMENT_FAILED, INSUFFICIENT_FUNDS, INVALID_PAYMENT_METHOD]
+                      message:
+                        type: string
+                      payment_details:
+                        type: object
+                        properties:
+                          gateway_error:
+                            type: string
+                          suggested_actions:
+                            type: array
+                            items:
+                              type: string
+        '409':
+          description: Session conflict
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: false
+                  error:
+                    type: object
+                    properties:
+                      code:
+                        type: string
+                        enum: [SESSION_EXPIRED, SLOT_NO_LONGER_AVAILABLE, USER_HAS_ACTIVE_SESSION]
+                      message:
+                        type: string
+                      current_session:
+                        $ref: '#/components/schemas/ParkingSession'
+                        nullable: true
+
+  /qr/{qr_id}/status:
+    get:
+      summary: Get QR code status
+      description: Check the current status of a QR code
+      tags:
+        - QR Scanning
+      security: []
+      parameters:
+        - name: qr_id
+          in: path
+          required: true
+          schema:
+            type: string
+          description: QR code identifier from scanned data
+      responses:
+        '200':
+          description: QR code status retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      qr_id:
+                        type: string
+                      status:
+                        type: string
+                        enum: [active, expired, disabled, invalid]
+                      parking_slot:
+                        $ref: '#/components/schemas/BasicSlotInfo'
+                      current_occupancy:
+                        type: object
+                        properties:
+                          is_occupied:
+                            type: boolean
+                          occupied_until:
+                            type: string
+                            format: date-time
+                            nullable: true
+                          session_id:
+                            type: string
+                            format: uuid
+                            nullable: true
+
+  /qr/generate:
+    post:
+      summary: Generate QR code for slot
+      description: Generate a new QR code for a parking slot (slot owners only)
+      tags:
+        - QR Scanning
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                parking_slot_id:
+                  type: string
+                  format: uuid
+                expiry_hours:
+                  type: integer
+                  minimum: 1
+                  maximum: 8760
+                  default: 24
+                  description: Hours until QR code expires
+                max_scans:
+                  type: integer
+                  minimum: 1
+                  maximum: 1000
+                  nullable: true
+                  description: Maximum number of scans allowed
+              required:
+                - parking_slot_id
+      responses:
+        '201':
+          description: QR code generated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      qr_code:
+                        type: object
+                        properties:
+                          id:
+                            type: string
+                            format: uuid
+                          qr_data:
+                            type: string
+                            description: Base64 encoded QR data
+                          qr_image_url:
+                            type: string
+                            format: uri
+                            description: URL to QR code image
+                          expires_at:
+                            type: string
+                            format: date-time
+                          scan_count:
+                            type: integer
+                            example: 0
+                          max_scans:
+                            type: integer
+                            nullable: true
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+  schemas:
+    ScannedParkingSlot:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        slot_number:
+          type: string
+        address:
+          type: string
+        location:
+          type: object
+          properties:
+            latitude:
+              type: number
+              format: float
+            longitude:
+              type: number
+              format: float
+        hourly_rate:
+          type: number
+          format: float
+        amenities:
+          type: array
+          items:
+            type: string
+        vehicle_compatibility:
+          type: array
+          items:
+            type: string
+        restrictions:
+          type: array
+          items:
+            type: string
+        photos:
+          type: array
+          items:
+            type: string
+            format: uri
+        owner_info:
+          type: object
+          properties:
+            name:
+              type: string
+            rating:
+              type: number
+              format: float
+            response_time:
+              type: string
+              description: Average response time for issues
+
+    PricingEstimate:
+      type: object
+      properties:
+        base_rate:
+          type: number
+          format: float
+        estimated_durations:
+          type: array
+          items:
+            type: object
+            properties:
+              duration_minutes:
+                type: integer
+              total_cost:
+                type: number
+                format: float
+              rate_breakdown:
+                type: array
+                items:
+                  type: object
+                  properties:
+                    period:
+                      type: string
+                    rate:
+                      type: number
+                      format: float
+                    duration:
+                      type: integer
+        additional_fees:
+          type: object
+          properties:
+            platform_fee:
+              type: number
+              format: float
+            payment_processing_fee:
+              type: number
+              format: float
+        currency:
+          type: string
+          example: "USD"
+
+    AlternativeSlot:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        slot_number:
+          type: string
+        distance_meters:
+          type: number
+          format: float
+        hourly_rate:
+          type: number
+          format: float
+        estimated_walk_time:
+          type: integer
+          description: Walking time in minutes
+
+    ParkingSession:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        parking_slot_id:
+          type: string
+          format: uuid
+        user_id:
+          type: string
+          format: uuid
+        start_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
+        duration_minutes:
+          type: integer
+        hourly_rate:
+          type: number
+          format: float
+        total_amount:
+          type: number
+          format: float
+        status:
+          type: string
+          enum: [pending, active, completed, cancelled, expired]
+        confirmation_code:
+          type: string
+        payment_status:
+          type: string
+          enum: [pending, processing, completed, failed]
+        created_at:
+          type: string
+          format: date-time
+
+    PaymentTransaction:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        session_id:
+          type: string
+          format: uuid
+        amount:
+          type: number
+          format: float
+        currency:
+          type: string
+        payment_method:
+          type: string
+        status:
+          type: string
+          enum: [pending, processing, completed, failed, refunded]
+        gateway_transaction_id:
+          type: string
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        processed_at:
+          type: string
+          format: date-time
+          nullable: true
+
+    BasicSlotInfo:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        slot_number:
+          type: string
+        address:
+          type: string
+        hourly_rate:
+          type: number
+          format: float
+        status:
+          type: string
+          enum: [available, occupied, reserved, maintenance]
+
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        error:
+          type: object
+          properties:
+            code:
+              type: string
+            message:
+              type: string
+            details:
+              type: object

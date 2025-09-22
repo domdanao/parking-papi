@@ -1,0 +1,418 @@
+openapi: 3.0.3
+info:
+  title: Parking Platform - Authentication API
+  description: Authentication endpoints for the street parking platform
+  version: 1.0.0
+  contact:
+    name: Parking Platform API
+    email: api@parkingplatform.com
+
+servers:
+  - url: https://api.parkingplatform.com/v1
+    description: Production server
+  - url: https://staging-api.parkingplatform.com/v1
+    description: Staging server
+
+security:
+  - bearerAuth: []
+
+paths:
+  /auth/register:
+    post:
+      summary: Register new user
+      description: Register a new user (temporary or full registration)
+      tags:
+        - Authentication
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                mobile_number:
+                  type: string
+                  pattern: '^\+[1-9]\d{1,14}$'
+                  example: "+1234567890"
+                email:
+                  type: string
+                  format: email
+                  example: "user@example.com"
+                first_name:
+                  type: string
+                  maxLength: 50
+                  example: "John"
+                last_name:
+                  type: string
+                  maxLength: 50
+                  example: "Doe"
+                password:
+                  type: string
+                  minLength: 8
+                  example: "SecurePassword123!"
+                password_confirmation:
+                  type: string
+                  example: "SecurePassword123!"
+                role:
+                  type: string
+                  enum: [vehicle_owner, slot_owner]
+                  example: "vehicle_owner"
+                device_name:
+                  type: string
+                  example: "iPhone 15"
+              required:
+                - mobile_number
+                - password
+                - password_confirmation
+                - role
+                - device_name
+      responses:
+        '201':
+          description: User registered successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Registration successful. OTP sent to mobile number."
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/User'
+                      token:
+                        type: string
+                        example: "1|abc123token456def"
+                      expires_at:
+                        type: string
+                        format: date-time
+                      otp_required:
+                        type: boolean
+                        example: true
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+
+  /auth/login:
+    post:
+      summary: User login
+      description: Authenticate user and return access token
+      tags:
+        - Authentication
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "user@example.com"
+                mobile_number:
+                  type: string
+                  pattern: '^\+[1-9]\d{1,14}$'
+                  example: "+1234567890"
+                password:
+                  type: string
+                  example: "SecurePassword123!"
+                device_name:
+                  type: string
+                  example: "iPhone 15"
+                remember_me:
+                  type: boolean
+                  default: false
+              required:
+                - password
+                - device_name
+              oneOf:
+                - required: [email]
+                - required: [mobile_number]
+      responses:
+        '200':
+          description: Login successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Login successful"
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/User'
+                      token:
+                        type: string
+                        example: "2|def456token789ghi"
+                      expires_at:
+                        type: string
+                        format: date-time
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/verify-otp:
+    post:
+      summary: Verify OTP
+      description: Verify mobile number with OTP code
+      tags:
+        - Authentication
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                mobile_number:
+                  type: string
+                  pattern: '^\+[1-9]\d{1,14}$'
+                  example: "+1234567890"
+                otp_code:
+                  type: string
+                  pattern: '^\d{6}$'
+                  example: "123456"
+              required:
+                - mobile_number
+                - otp_code
+      responses:
+        '200':
+          description: OTP verified successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Mobile number verified successfully"
+                  data:
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/User'
+                      mobile_verified:
+                        type: boolean
+                        example: true
+        '400':
+          description: Invalid or expired OTP
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /auth/logout:
+    post:
+      summary: User logout
+      description: Revoke current access token
+      tags:
+        - Authentication
+      responses:
+        '200':
+          description: Logout successful
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Logged out successfully"
+
+  /auth/refresh:
+    post:
+      summary: Refresh token
+      description: Refresh the current access token
+      tags:
+        - Authentication
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      token:
+                        type: string
+                        example: "3|ghi789token012jkl"
+                      expires_at:
+                        type: string
+                        format: date-time
+
+  /auth/user:
+    get:
+      summary: Get current user
+      description: Get authenticated user information
+      tags:
+        - Authentication
+      responses:
+        '200':
+          description: User information retrieved
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/User'
+
+  /auth/forgot-password:
+    post:
+      summary: Request password reset
+      description: Send password reset link to user's email
+      tags:
+        - Authentication
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                email:
+                  type: string
+                  format: email
+                  example: "user@example.com"
+              required:
+                - email
+      responses:
+        '200':
+          description: Password reset email sent
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Password reset link sent to your email"
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+          example: "550e8400-e29b-41d4-a716-446655440000"
+        email:
+          type: string
+          format: email
+          example: "user@example.com"
+        mobile_number:
+          type: string
+          example: "+1234567890"
+        first_name:
+          type: string
+          example: "John"
+        last_name:
+          type: string
+          example: "Doe"
+        role:
+          type: string
+          enum: [vehicle_owner, slot_owner, platform_owner, enforcer]
+          example: "vehicle_owner"
+        account_type:
+          type: string
+          enum: [temporary, registered]
+          example: "registered"
+        email_verified_at:
+          type: string
+          format: date-time
+          nullable: true
+        mobile_verified_at:
+          type: string
+          format: date-time
+          nullable: true
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    Error:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "Error message"
+        errors:
+          type: object
+          additionalProperties:
+            type: array
+            items:
+              type: string
+
+    ValidationError:
+      type: object
+      properties:
+        success:
+          type: boolean
+          example: false
+        message:
+          type: string
+          example: "The given data was invalid."
+        errors:
+          type: object
+          properties:
+            email:
+              type: array
+              items:
+                type: string
+              example: ["The email field is required."]
+            password:
+              type: array
+              items:
+                type: string
+              example: ["The password field is required."]

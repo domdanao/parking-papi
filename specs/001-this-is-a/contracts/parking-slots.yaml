@@ -1,0 +1,705 @@
+openapi: 3.0.3
+info:
+  title: Parking Platform - Parking Slots API
+  description: Parking slot management and discovery endpoints
+  version: 1.0.0
+
+servers:
+  - url: https://api.parkingplatform.com/v1
+
+security:
+  - bearerAuth: []
+
+paths:
+  /parking-slots/nearby:
+    get:
+      summary: Find nearby parking slots
+      description: Search for parking slots near a location with filters
+      tags:
+        - Parking Slots
+      parameters:
+        - name: latitude
+          in: query
+          required: true
+          schema:
+            type: number
+            format: float
+            minimum: -90
+            maximum: 90
+          example: 40.7128
+        - name: longitude
+          in: query
+          required: true
+          schema:
+            type: number
+            format: float
+            minimum: -180
+            maximum: 180
+          example: -74.0060
+        - name: radius
+          in: query
+          schema:
+            type: integer
+            minimum: 100
+            maximum: 5000
+            default: 1000
+          description: Search radius in meters
+          example: 1000
+        - name: vehicle_type
+          in: query
+          schema:
+            type: string
+            enum: [car, motorcycle, truck, van]
+          example: "car"
+        - name: amenities
+          in: query
+          schema:
+            type: array
+            items:
+              type: string
+              enum: [covered, secured, ev_charging, disabled_access]
+          style: form
+          explode: false
+          example: ["covered", "secured"]
+        - name: max_price
+          in: query
+          schema:
+            type: number
+            format: float
+            minimum: 0
+          description: Maximum hourly rate
+          example: 25.00
+        - name: available_from
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Required availability start time
+        - name: available_until
+          in: query
+          schema:
+            type: string
+            format: date-time
+          description: Required availability end time
+        - name: limit
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 50
+            default: 20
+          example: 20
+      responses:
+        '200':
+          description: Nearby parking slots found
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      slots:
+                        type: array
+                        items:
+                          $ref: '#/components/schemas/ParkingSlotSummary'
+                      pagination:
+                        $ref: '#/components/schemas/Pagination'
+                      search_params:
+                        type: object
+                        properties:
+                          center:
+                            $ref: '#/components/schemas/Location'
+                          radius:
+                            type: integer
+                            example: 1000
+                          filters_applied:
+                            type: array
+                            items:
+                              type: string
+
+  /parking-slots:
+    get:
+      summary: List parking slots
+      description: Get parking slots owned by the authenticated user
+      tags:
+        - Parking Slots
+      parameters:
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [draft, submitted, under_review, approved, rejected, published]
+        - name: approval_status
+          in: query
+          schema:
+            type: string
+            enum: [available, occupied, reserved, maintenance]
+      responses:
+        '200':
+          description: User's parking slots
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: array
+                    items:
+                      $ref: '#/components/schemas/ParkingSlot'
+
+    post:
+      summary: Create parking slot
+      description: Register a new parking slot (slot owners only)
+      tags:
+        - Parking Slots
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                slot_number:
+                  type: string
+                  maxLength: 50
+                  example: "A-123"
+                latitude:
+                  type: number
+                  format: float
+                  minimum: -90
+                  maximum: 90
+                  example: 40.7128
+                longitude:
+                  type: number
+                  format: float
+                  minimum: -180
+                  maximum: 180
+                  example: -74.0060
+                address:
+                  type: string
+                  maxLength: 255
+                  example: "123 Main St, New York, NY 10001"
+                landmark_references:
+                  type: string
+                  maxLength: 500
+                  example: "Near Central Park entrance"
+                dimensions:
+                  type: object
+                  properties:
+                    length_meters:
+                      type: number
+                      format: float
+                      minimum: 1
+                      maximum: 20
+                    width_meters:
+                      type: number
+                      format: float
+                      minimum: 1
+                      maximum: 10
+                    height_clearance_meters:
+                      type: number
+                      format: float
+                      minimum: 1
+                      maximum: 5
+                  required:
+                    - length_meters
+                    - width_meters
+                surface_type:
+                  type: string
+                  enum: [asphalt, concrete, gravel, grass]
+                  example: "asphalt"
+                vehicle_compatibility:
+                  type: array
+                  items:
+                    type: string
+                    enum: [car, motorcycle, truck, van]
+                  example: ["car", "motorcycle"]
+                base_hourly_rate:
+                  type: number
+                  format: float
+                  minimum: 0
+                  example: 15.00
+                minimum_duration_minutes:
+                  type: integer
+                  minimum: 15
+                  maximum: 1440
+                  example: 30
+                maximum_duration_minutes:
+                  type: integer
+                  minimum: 30
+                  maximum: 10080
+                  example: 480
+                amenities:
+                  type: array
+                  items:
+                    type: string
+                    enum: [covered, secured, ev_charging, disabled_access]
+                  example: ["covered", "secured"]
+                accessibility_features:
+                  type: array
+                  items:
+                    type: string
+                  example: ["wheelchair_accessible", "ground_level"]
+                restrictions:
+                  type: array
+                  items:
+                    type: string
+                  example: ["no_overnight_parking"]
+                special_conditions:
+                  type: string
+                  maxLength: 1000
+                  example: "Available weekdays only"
+                photos:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  minItems: 1
+                  maxItems: 10
+                ownership_documents:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+                  minItems: 1
+                  maxItems: 5
+              required:
+                - slot_number
+                - latitude
+                - longitude
+                - address
+                - dimensions
+                - surface_type
+                - vehicle_compatibility
+                - base_hourly_rate
+                - photos
+                - ownership_documents
+      responses:
+        '201':
+          description: Parking slot created successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Parking slot submitted for review"
+                  data:
+                    $ref: '#/components/schemas/ParkingSlot'
+
+  /parking-slots/{id}:
+    get:
+      summary: Get parking slot details
+      description: Get detailed information about a specific parking slot
+      tags:
+        - Parking Slots
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Parking slot details
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    $ref: '#/components/schemas/ParkingSlotDetailed'
+
+    put:
+      summary: Update parking slot
+      description: Update parking slot information (slot owners only)
+      tags:
+        - Parking Slots
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                base_hourly_rate:
+                  type: number
+                  format: float
+                  minimum: 0
+                amenities:
+                  type: array
+                  items:
+                    type: string
+                    enum: [covered, secured, ev_charging, disabled_access]
+                restrictions:
+                  type: array
+                  items:
+                    type: string
+                special_conditions:
+                  type: string
+                  maxLength: 1000
+                is_active:
+                  type: boolean
+                additional_photos:
+                  type: array
+                  items:
+                    type: string
+                    format: binary
+      responses:
+        '200':
+          description: Parking slot updated successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Parking slot updated successfully"
+                  data:
+                    $ref: '#/components/schemas/ParkingSlot'
+
+    delete:
+      summary: Delete parking slot
+      description: Delete a parking slot (slot owners only, cannot delete if active bookings exist)
+      tags:
+        - Parking Slots
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Parking slot deleted successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  message:
+                    type: string
+                    example: "Parking slot deleted successfully"
+
+  /parking-slots/{id}/availability:
+    get:
+      summary: Check slot availability
+      description: Check if a parking slot is available for a specific time period
+      tags:
+        - Parking Slots
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: start_time
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+        - name: end_time
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date-time
+      responses:
+        '200':
+          description: Availability check result
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  success:
+                    type: boolean
+                    example: true
+                  data:
+                    type: object
+                    properties:
+                      available:
+                        type: boolean
+                        example: true
+                      current_status:
+                        type: string
+                        enum: [available, occupied, reserved, maintenance]
+                      current_session:
+                        $ref: '#/components/schemas/ParkingSessionSummary'
+                        nullable: true
+                      pricing:
+                        type: object
+                        properties:
+                          hourly_rate:
+                            type: number
+                            format: float
+                          total_estimated_cost:
+                            type: number
+                            format: float
+                          pricing_breakdown:
+                            type: array
+                            items:
+                              type: object
+                              properties:
+                                period:
+                                  type: string
+                                rate:
+                                  type: number
+                                  format: float
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+
+  schemas:
+    Location:
+      type: object
+      properties:
+        latitude:
+          type: number
+          format: float
+          example: 40.7128
+        longitude:
+          type: number
+          format: float
+          example: -74.0060
+
+    Pagination:
+      type: object
+      properties:
+        current_page:
+          type: integer
+          example: 1
+        per_page:
+          type: integer
+          example: 20
+        total:
+          type: integer
+          example: 150
+        total_pages:
+          type: integer
+          example: 8
+
+    ParkingSlotSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        slot_number:
+          type: string
+          example: "A-123"
+        location:
+          $ref: '#/components/schemas/Location'
+        address:
+          type: string
+          example: "123 Main St, New York, NY"
+        distance_meters:
+          type: number
+          format: float
+          example: 150.5
+        hourly_rate:
+          type: number
+          format: float
+          example: 15.00
+        amenities:
+          type: array
+          items:
+            type: string
+        vehicle_compatibility:
+          type: array
+          items:
+            type: string
+        status:
+          type: string
+          enum: [available, occupied, reserved, maintenance]
+        photos:
+          type: array
+          items:
+            type: string
+            format: uri
+
+    ParkingSlot:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        slot_owner_id:
+          type: string
+          format: uuid
+        slot_number:
+          type: string
+        location:
+          $ref: '#/components/schemas/Location'
+        address:
+          type: string
+        landmark_references:
+          type: string
+          nullable: true
+        dimensions:
+          type: object
+          properties:
+            length_meters:
+              type: number
+              format: float
+            width_meters:
+              type: number
+              format: float
+            height_clearance_meters:
+              type: number
+              format: float
+              nullable: true
+        surface_type:
+          type: string
+          enum: [asphalt, concrete, gravel, grass]
+        vehicle_compatibility:
+          type: array
+          items:
+            type: string
+        base_hourly_rate:
+          type: number
+          format: float
+        minimum_duration_minutes:
+          type: integer
+        maximum_duration_minutes:
+          type: integer
+        status:
+          type: string
+          enum: [available, occupied, reserved, maintenance]
+        approval_status:
+          type: string
+          enum: [draft, submitted, under_review, approved, rejected, published]
+        amenities:
+          type: array
+          items:
+            type: string
+        accessibility_features:
+          type: array
+          items:
+            type: string
+        restrictions:
+          type: array
+          items:
+            type: string
+        special_conditions:
+          type: string
+          nullable: true
+        photos:
+          type: array
+          items:
+            type: string
+            format: uri
+        is_active:
+          type: boolean
+        created_at:
+          type: string
+          format: date-time
+        updated_at:
+          type: string
+          format: date-time
+
+    ParkingSlotDetailed:
+      allOf:
+        - $ref: '#/components/schemas/ParkingSlot'
+        - type: object
+          properties:
+            owner:
+              type: object
+              properties:
+                name:
+                  type: string
+                rating:
+                  type: number
+                  format: float
+                total_reviews:
+                  type: integer
+            pricing_variations:
+              type: array
+              items:
+                type: object
+                properties:
+                  day_of_week:
+                    type: integer
+                    nullable: true
+                  start_time:
+                    type: string
+                    nullable: true
+                  end_time:
+                    type: string
+                    nullable: true
+                  rate_multiplier:
+                    type: number
+                    format: float
+            recent_sessions:
+              type: array
+              items:
+                $ref: '#/components/schemas/ParkingSessionSummary'
+            reviews:
+              type: array
+              items:
+                type: object
+                properties:
+                  rating:
+                    type: integer
+                    minimum: 1
+                    maximum: 5
+                  comment:
+                    type: string
+                  created_at:
+                    type: string
+                    format: date-time
+
+    ParkingSessionSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        start_time:
+          type: string
+          format: date-time
+        end_time:
+          type: string
+          format: date-time
+        status:
+          type: string
+          enum: [pending, active, completed, cancelled, expired]
+        total_amount:
+          type: number
+          format: float
