@@ -2,13 +2,20 @@
     "$schema": "https://getcomposer.org/schema.json",
     "name": "parking-papi/platform",
     "type": "project",
-    "description": "Street Parking Platform - A three-sided marketplace for parking",
+    "description": "Parking Papi - A comprehensive street parking platform connecting vehicle owners, parking slot owners, and platform operators",
     "keywords": [
         "laravel",
         "parking",
         "marketplace",
         "inertia",
-        "react"
+        "react",
+        "qr-code",
+        "real-time",
+        "pwa",
+        "mobile-app",
+        "expo",
+        "geospatial",
+        "payments"
     ],
     "license": "MIT",
     "require": {
