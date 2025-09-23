@@ -1,4 +1,5 @@
 import { SidebarProvider } from '@/components/ui/sidebar';
+import { ParkingProvider } from '@/providers/parking-provider';
 import { SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';
 
@@ -10,13 +11,17 @@ interface AppShellProps {
 export function AppShell({ children, variant = 'header' }: AppShellProps) {
     if (variant === 'header') {
         return (
-            <div className="flex min-h-screen w-full flex-col">{children}</div>
+            <ParkingProvider>
+                <div className="flex min-h-screen w-full flex-col">{children}</div>
+            </ParkingProvider>
         );
     }
 
     // Use React Suspense to handle potential loading states
     return (
-        <SidebarShell>{children}</SidebarShell>
+        <ParkingProvider>
+            <SidebarShell>{children}</SidebarShell>
+        </ParkingProvider>
     );
 }
 

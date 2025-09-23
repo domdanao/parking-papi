@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { ParkingDashboard } from '@/components/parking-dashboard';
 import AppLayout from '@/layouts/app-layout';
 import { dashboard } from '@/routes';
 import { type BreadcrumbItem, type User } from '@/types';
@@ -20,32 +21,11 @@ interface DashboardProps {
 }
 
 export default function Dashboard({ user, dashboardData }: DashboardProps) {
-    const renderDashboard = () => {
-        switch (dashboardData.type) {
-            case 'vehicle_owner':
-                return <VehicleOwnerDashboard data={dashboardData} />;
-            case 'slot_owner':
-                return <SlotOwnerDashboard data={dashboardData} />;
-            case 'platform_owner':
-                return <PlatformOwnerDashboard data={dashboardData} />;
-            case 'enforcer':
-                return <EnforcerDashboard data={dashboardData} />;
-            default:
-                return <div>Welcome to the Parking Platform</div>;
-        }
-    };
-
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Dashboard" />
             <div className="flex h-full flex-1 flex-col gap-6 p-6">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-3xl font-bold">Welcome back, {user.first_name || user.name}!</h1>
-                        <p className="text-muted-foreground">Role: {user.role.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase())}</p>
-                    </div>
-                </div>
-                {renderDashboard()}
+                <ParkingDashboard userRole={user.role as any} />
             </div>
         </AppLayout>
     );

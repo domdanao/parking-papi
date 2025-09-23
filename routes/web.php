@@ -3,6 +3,7 @@
 use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\ParkingController;
 use App\Http\Controllers\Web\SlotManagementController;
+use App\Http\Controllers\QRCodeController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -29,13 +30,20 @@ Route::get('/health', function () {
     ]);
 });
 
+// Public QR Code scanning route - no authentication required
+Route::get('parking/scan/{encodedData}', [QRCodeController::class, 'handleScan'])->name('parking.scan');
+
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
 
-    // Parking routes
+    // Authenticated parking routes
     Route::prefix('parking')->group(function () {
         Route::get('search', [ParkingController::class, 'search'])->name('parking.search');
         Route::get('{id}', [ParkingController::class, 'show'])->name('parking.show');
+
+        // QR Code processing and booking - require authentication
+        Route::post('scan', [QRCodeController::class, 'processScan'])->name('parking.scan.process');
+        Route::post('book', [QRCodeController::class, 'bookSlot'])->name('parking.book');
     });
 
     // Slot management routes (for slot owners)

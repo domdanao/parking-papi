@@ -1,7 +1,7 @@
 // Service Worker for Parking Platform PWA
-const CACHE_NAME = 'parking-papi-v2';
-const STATIC_CACHE_NAME = 'parking-papi-static-v2';
-const DYNAMIC_CACHE_NAME = 'parking-papi-dynamic-v2';
+const CACHE_NAME = 'parking-papi-v5';
+const STATIC_CACHE_NAME = 'parking-papi-static-v5';
+const DYNAMIC_CACHE_NAME = 'parking-papi-dynamic-v5';
 
 // Assets to cache immediately on install
 const STATIC_ASSETS = [
@@ -18,6 +18,14 @@ const CACHEABLE_API_ROUTES = [
   '/api/auth/user',
   '/api/payment-methods'
 ];
+
+// Check if we're in development mode
+function isDevelopment() {
+  return self.location.hostname === 'localhost' ||
+         self.location.hostname === '127.0.0.1' ||
+         self.location.hostname.endsWith('.test') ||
+         self.location.port === '5173'; // Vite dev server port
+}
 
 // Install event - cache static assets
 self.addEventListener('install', (event) => {
@@ -138,9 +146,11 @@ async function handleNavigationRequest(request) {
     // Try network first for navigation
     const networkResponse = await fetch(request);
 
-    // Cache the response
-    const cache = await caches.open(DYNAMIC_CACHE_NAME);
-    cache.put(request, networkResponse.clone());
+    // Only cache navigation responses in production (not during development)
+    if (!isDevelopment()) {
+      const cache = await caches.open(DYNAMIC_CACHE_NAME);
+      cache.put(request, networkResponse.clone());
+    }
 
     return networkResponse;
   } catch (error) {

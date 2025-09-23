@@ -65,8 +65,19 @@ interface AppHeaderProps {
 }
 
 export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
-    const page = usePage<SharedData>();
-    const { auth } = page.props;
+    let page, auth;
+    try {
+        page = usePage<SharedData>();
+        auth = page?.props?.auth;
+    } catch (error) {
+        console.error('Error accessing Inertia page context in AppHeader:', error);
+        return null;
+    }
+
+    if (!auth?.user) {
+        return null;
+    }
+
     const getInitials = useInitials();
     return (
         <>
@@ -165,7 +176,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                             href={item.href}
                                             className={cn(
                                                 navigationMenuTriggerStyle(),
-                                                page.url ===
+                                                page?.url ===
                                                     (typeof item.href ===
                                                     'string'
                                                         ? item.href
@@ -182,7 +193,7 @@ export function AppHeader({ breadcrumbs = [] }: AppHeaderProps) {
                                             )}
                                             {item.title}
                                         </Link>
-                                        {page.url === item.href && (
+                                        {page?.url === item.href && (
                                             <div className="absolute bottom-0 left-0 h-0.5 w-full translate-y-px bg-black dark:bg-white"></div>
                                         )}
                                     </NavigationMenuItem>

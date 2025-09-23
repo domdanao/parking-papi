@@ -17,7 +17,19 @@ import { usePage } from '@inertiajs/react';
 import { ChevronsUpDown } from 'lucide-react';
 
 export function NavUser() {
-    const { auth } = usePage<SharedData>().props;
+    let auth;
+    try {
+        const page = usePage<SharedData>();
+        auth = page?.props?.auth;
+    } catch (error) {
+        console.error('Error accessing Inertia page context in NavUser:', error);
+        return null;
+    }
+
+    if (!auth?.user) {
+        return null;
+    }
+
     const { state } = useSidebar();
     const isMobile = useIsMobile();
 

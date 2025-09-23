@@ -37,7 +37,7 @@
 
         {{-- Icons --}}
         <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-        <link rel="apple-touch-icon" href="/apple-touch-icon.svg">
+        <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 
         {{-- PWA Meta Tags --}}
         <meta name="theme-color" content="#3B82F6">
