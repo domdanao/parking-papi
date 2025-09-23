@@ -26,7 +26,7 @@ class UserFactory extends Factory
         return [
             'name' => fake()->name(),
             'email' => fake()->unique()->safeEmail(),
-            'mobile_number' => fake()->unique()->phoneNumber(),
+            'mobile_number' => '+639' . fake()->unique()->randomNumber(9, true),
             'first_name' => fake()->firstName(),
             'last_name' => fake()->lastName(),
             'role' => fake()->randomElement(['vehicle_owner', 'slot_owner', 'platform_owner', 'enforcer']),
