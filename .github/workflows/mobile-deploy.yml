@@ -1,0 +1,145 @@
+name: EAS Mobile App Deployment
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'mobile/expo-app/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'mobile/expo-app/**'
+  workflow_dispatch:
+    inputs:
+      build_profile:
+        description: 'Build profile (development, preview, production)'
+        required: true
+        default: 'preview'
+        type: choice
+        options:
+          - development
+          - preview
+          - production
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./mobile/expo-app
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: './mobile/expo-app/package-lock.json'
+
+    - name: Setup Expo CLI
+      run: npm install -g @expo/cli@latest eas-cli@latest
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Run TypeScript check
+      run: npx tsc --noEmit
+
+    - name: Run tests
+      run: npm test -- --watchAll=false --coverage
+
+    - name: Run linting
+      run: npm run lint
+
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' || github.event_name == 'workflow_dispatch'
+    defaults:
+      run:
+        working-directory: ./mobile/expo-app
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+        cache-dependency-path: './mobile/expo-app/package-lock.json'
+
+    - name: Setup Expo and EAS
+      run: npm install -g @expo/cli@latest eas-cli@latest
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Create .env file
+      run: |
+        echo "API_BASE_URL=${{ secrets.MOBILE_API_BASE_URL }}" > .env
+        echo "WEB_BASE_URL=${{ secrets.MOBILE_WEB_BASE_URL }}" >> .env
+        echo "APP_ENVIRONMENT=production" >> .env
+        echo "ENABLE_OFFLINE_MODE=true" >> .env
+        echo "ENABLE_PUSH_NOTIFICATIONS=true" >> .env
+        echo "DEBUG_MODE=false" >> .env
+
+    - name: Determine build profile
+      id: build_profile
+      run: |
+        if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
+          echo "profile=${{ github.event.inputs.build_profile }}" >> $GITHUB_OUTPUT
+        else
+          echo "profile=preview" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Build with EAS
+      run: |
+        eas build --platform all --profile ${{ steps.build_profile.outputs.profile }} --non-interactive --no-wait
+      env:
+        EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
+
+    - name: Comment on PR with build info
+      if: github.event_name == 'pull_request'
+      uses: actions/github-script@v7
+      with:
+        script: |
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: `📱 Mobile app build started with profile: ${{ steps.build_profile.outputs.profile }}\n\nCheck build status at: https://expo.dev/accounts/your-account/projects/parking-papi/builds`
+          })
+
+  submit:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event.inputs.build_profile == 'production'
+    defaults:
+      run:
+        working-directory: ./mobile/expo-app
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+
+    - name: Setup Expo and EAS
+      run: npm install -g @expo/cli@latest eas-cli@latest
+
+    - name: Submit to app stores
+      run: |
+        # Wait for build to complete first
+        echo "Build submitted. Manual submission to app stores can be done via:"
+        echo "eas submit --platform ios"
+        echo "eas submit --platform android"
+      env:
+        EXPO_TOKEN: ${{ secrets.EXPO_TOKEN }}
