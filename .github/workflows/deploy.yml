@@ -1,0 +1,167 @@
+name: Deploy to Laravel Cloud
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_USER: postgres
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_DB: parking_papi_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 5432:5432
+
+      redis:
+        image: redis:7
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+          - 6379:6379
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup PHP
+      uses: shivammathur/setup-php@v2
+      with:
+        php-version: '8.3'
+        extensions: mbstring, dom, fileinfo, pgsql, redis
+        coverage: xdebug
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20'
+        cache: 'npm'
+
+    - name: Install PHP dependencies
+      run: composer install --prefer-dist --no-progress --no-suggest
+
+    - name: Install Node dependencies
+      run: npm ci
+
+    - name: Create environment file
+      run: |
+        cp .env.example .env
+        php artisan key:generate
+
+    - name: Configure test environment
+      run: |
+        echo "DB_CONNECTION=pgsql" >> .env
+        echo "DB_HOST=127.0.0.1" >> .env
+        echo "DB_PORT=5432" >> .env
+        echo "DB_DATABASE=parking_papi_test" >> .env
+        echo "DB_USERNAME=postgres" >> .env
+        echo "DB_PASSWORD=postgres" >> .env
+        echo "REDIS_HOST=127.0.0.1" >> .env
+        echo "REDIS_PORT=6379" >> .env
+        echo "CACHE_DRIVER=redis" >> .env
+        echo "SESSION_DRIVER=redis" >> .env
+        echo "QUEUE_CONNECTION=redis" >> .env
+
+    - name: Run database migrations
+      run: php artisan migrate --force
+
+    - name: Build frontend assets
+      run: npm run build
+
+    - name: Run PHP tests
+      run: |
+        php artisan test --coverage --min=80
+        php artisan test tests/Feature/Api/ --testdox
+
+    - name: Run frontend tests
+      run: npm run test:ci
+
+    - name: Run type checking
+      run: npm run types
+
+    - name: Run linting
+      run: |
+        npm run lint
+        ./vendor/bin/pint --test
+
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        files: ./coverage.xml
+        fail_ci_if_error: false
+
+  deploy:
+    needs: test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Deploy to Laravel Cloud
+      run: |
+        curl -X POST "https://cloud.laravel.com/api/projects/${{ secrets.LARAVEL_CLOUD_PROJECT_ID }}/deployments" \
+          -H "Authorization: Bearer ${{ secrets.LARAVEL_CLOUD_TOKEN }}" \
+          -H "Content-Type: application/json" \
+          -d '{
+            "environment": "production",
+            "branch": "main"
+          }'
+
+    - name: Wait for deployment
+      run: |
+        echo "Deployment initiated. Check Laravel Cloud dashboard for status."
+        echo "🚀 Application will be available at your Laravel Cloud domain"
+
+    - name: Post-deployment health check
+      run: |
+        # Wait a bit for deployment to complete
+        sleep 60
+
+        # Health check (replace with your actual domain)
+        if [[ -n "${{ secrets.LARAVEL_CLOUD_DOMAIN }}" ]]; then
+          response=$(curl -s -o /dev/null -w "%{http_code}" "https://${{ secrets.LARAVEL_CLOUD_DOMAIN }}/health")
+          if [[ $response == "200" ]]; then
+            echo "✅ Health check passed"
+          else
+            echo "⚠️ Health check returned: $response"
+            exit 1
+          fi
+        else
+          echo "ℹ️ No domain configured for health check"
+        fi
+
+  notify:
+    needs: [test, deploy]
+    runs-on: ubuntu-latest
+    if: always()
+
+    steps:
+    - name: Notify deployment status
+      run: |
+        if [[ "${{ needs.deploy.result }}" == "success" ]]; then
+          echo "🎉 Deployment successful!"
+          echo "📱 Ready for mobile app deployment"
+        elif [[ "${{ needs.deploy.result }}" == "failure" ]]; then
+          echo "❌ Deployment failed"
+          exit 1
+        elif [[ "${{ needs.test.result }}" == "failure" ]]; then
+          echo "🧪 Tests failed - deployment skipped"
+          exit 1
+        fi

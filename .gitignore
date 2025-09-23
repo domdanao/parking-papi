@@ -26,3 +26,16 @@ yarn-error.log
 /.nova
 /.vscode
 /.zed
+
+# Deployment files (contain secrets)
+.deployment-keys
+*.deployment
+
+# Test results
+/test-results
+/coverage
+coverage.xml
+
+# Mobile app builds
+/mobile/expo-app/dist
+/mobile/expo-app/.expo
