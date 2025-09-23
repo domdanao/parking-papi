@@ -1,15 +1,15 @@
 // Service Worker for Parking Platform PWA
-const CACHE_NAME = 'parking-papi-v1';
-const STATIC_CACHE_NAME = 'parking-papi-static-v1';
-const DYNAMIC_CACHE_NAME = 'parking-papi-dynamic-v1';
+const CACHE_NAME = 'parking-papi-v2';
+const STATIC_CACHE_NAME = 'parking-papi-static-v2';
+const DYNAMIC_CACHE_NAME = 'parking-papi-dynamic-v2';
 
 // Assets to cache immediately on install
 const STATIC_ASSETS = [
   '/',
-  '/build/assets/app.css',
-  '/build/assets/app.js',
   '/favicon.ico',
   '/offline.html'
+  // Note: Build assets are dynamically cached in fetch handler
+  // to handle Vite's hash-based filenames in development
 ];
 
 // API endpoints that can be cached
@@ -166,24 +166,48 @@ async function handleNavigationRequest(request) {
   }
 }
 
-// Handle static assets with cache-first strategy
+// Handle static assets with smart caching strategy
 async function handleStaticRequest(request) {
-  // Try cache first for static assets
+  const url = new URL(request.url);
+
+  // For build assets (JS/CSS), use network-first in development to prevent stale cache
+  const isBuildAsset = url.pathname.includes('/build/assets/');
+
+  if (isBuildAsset) {
+    try {
+      // Try network first for build assets
+      const networkResponse = await fetch(request);
+
+      if (networkResponse.ok) {
+        const cache = await caches.open(DYNAMIC_CACHE_NAME);
+        cache.put(request, networkResponse.clone());
+        return networkResponse;
+      }
+    } catch (error) {
+      console.log('[SW] Network failed for build asset, trying cache:', request.url);
+    }
+
+    // Fall back to cache if network fails
+    const cachedResponse = await caches.match(request);
+    if (cachedResponse) {
+      return cachedResponse;
+    }
+
+    throw new Error('Build asset not available');
+  }
+
+  // For other static assets, use cache-first
   const cachedResponse = await caches.match(request);
   if (cachedResponse) {
     return cachedResponse;
   }
 
   try {
-    // Try network
     const networkResponse = await fetch(request);
-
-    // Cache the response if successful
     if (networkResponse.ok) {
       const cache = await caches.open(DYNAMIC_CACHE_NAME);
       cache.put(request, networkResponse.clone());
     }
-
     return networkResponse;
   } catch (error) {
     console.log('[SW] Failed to fetch static asset:', request.url);
