@@ -88,7 +88,7 @@ export default function ParkingSlotDetail({ slot }: ParkingSlotDetailProps) {
                                         <div className="flex items-center gap-4">
                                             <div className="flex items-center gap-1">
                                                 <DollarSign className="h-4 w-4 text-green-600" />
-                                                <span className="font-medium text-lg">${slot.base_hourly_rate}/hour</span>
+                                                <span className="font-medium text-lg">₱{slot.base_hourly_rate}/hour</span>
                                             </div>
                                             <div className="flex items-center gap-1">
                                                 <Star className="h-4 w-4 text-yellow-500" />
@@ -188,7 +188,7 @@ export default function ParkingSlotDetail({ slot }: ParkingSlotDetailProps) {
                                         <MapPin className="h-8 w-8 text-gray-400 mx-auto mb-2" />
                                         <p className="text-sm text-gray-500">Map integration would go here</p>
                                         <p className="text-xs text-gray-400">
-                                            {slot.latitude.toFixed(6)}, {slot.longitude.toFixed(6)}
+                                            {Number(slot.latitude).toFixed(6)}, {Number(slot.longitude).toFixed(6)}
                                         </p>
                                     </div>
                                 </div>
@@ -252,15 +252,15 @@ export default function ParkingSlotDetail({ slot }: ParkingSlotDetailProps) {
                                 <div className="border-t pt-4">
                                     <div className="flex justify-between items-center mb-2">
                                         <span>Subtotal:</span>
-                                        <span>${calculateTotal()}</span>
+                                        <span>₱{calculateTotal()}</span>
                                     </div>
                                     <div className="flex justify-between items-center mb-2">
                                         <span>Service fee:</span>
-                                        <span>$0.50</span>
+                                        <span>₱0.50</span>
                                     </div>
                                     <div className="flex justify-between items-center font-semibold text-lg border-t pt-2">
                                         <span>Total:</span>
-                                        <span>${(parseFloat(calculateTotal()) + 0.50).toFixed(2)}</span>
+                                        <span>₱{(parseFloat(calculateTotal()) + 0.50).toFixed(2)}</span>
                                     </div>
                                 </div>
 

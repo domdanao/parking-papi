@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, ReactNode } from 'react';
+import { createContext, useContext, useEffect, ReactNode } from 'react';
 import { useParkingStoreWithWebSocket } from '@/stores/parking-store';
 import { ConnectionStatus } from '@/components/connection-status';
 import { usePage } from '@inertiajs/react';
@@ -16,14 +16,9 @@ interface ParkingProviderProps {
 }
 
 export function ParkingProvider({ children, showConnectionStatus = true }: ParkingProviderProps) {
-  let userId: string | undefined;
-
-  try {
-    const page = usePage<SharedData>();
-    userId = page?.props?.auth?.user?.id;
-  } catch (error) {
-    console.warn('[ParkingProvider] Could not access user from Inertia context:', error);
-  }
+  // Always call hooks unconditionally
+  const page = usePage<SharedData>();
+  const userId = page?.props?.auth?.user?.id;
 
   const store = useParkingStoreWithWebSocket(userId);
 

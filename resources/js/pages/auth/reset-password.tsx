@@ -1,4 +1,4 @@
-import NewPasswordController from '@/actions/App/Http/Controllers/Auth/NewPasswordController';
+// import NewPasswordController from '@/actions/App/Http/Controllers/Auth/NewPasswordController';
 import { Form, Head } from '@inertiajs/react';
 import { LoaderCircle } from 'lucide-react';
 

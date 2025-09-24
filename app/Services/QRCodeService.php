@@ -251,7 +251,7 @@ class QRCodeService
             'hourly_rate' => $baseRate,
             'minimum_charge' => $baseRate, // 1 hour minimum
             'daily_rate' => $baseRate * 24 * 0.8, // 20% discount for full day
-            'currency' => 'USD',
+            'currency' => 'PHP',
             'examples' => [
                 '1 hour' => $baseRate,
                 '2 hours' => $baseRate * 2,

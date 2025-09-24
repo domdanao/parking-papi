@@ -113,7 +113,7 @@ function SlotCard({ slot }: { slot: ParkingSlot }) {
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-1">
                         <DollarSign className="h-4 w-4 text-green-600" />
-                        <span className="font-medium">${slot.base_hourly_rate}/hour</span>
+                        <span className="font-medium">₱{slot.base_hourly_rate}/hour</span>
                     </div>
                     <div className="text-sm text-muted-foreground">
                         {slot.is_active ? 'Active' : 'Inactive'}
@@ -136,6 +136,12 @@ function SlotCard({ slot }: { slot: ParkingSlot }) {
                 )}
 
                 <div className="flex gap-2 pt-2">
+                    <Link href={`/slots/${slot.id}`} className="flex-1">
+                        <Button variant="outline" size="sm" className="w-full">
+                            <Building className="mr-1 h-3 w-3" />
+                            View
+                        </Button>
+                    </Link>
                     <Link href={`/slots/${slot.id}/edit`} className="flex-1">
                         <Button variant="outline" size="sm" className="w-full">
                             <Edit className="mr-1 h-3 w-3" />

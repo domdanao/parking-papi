@@ -599,7 +599,7 @@ enum NotificationStatus {
 
 #### Payment Validation
 - Amount must be positive
-- Currency must be supported (USD, EUR, etc.)
+- Currency must be supported (PHP, USD, EUR, etc.)
 - Commission percentage must be between 0-100%
 - Payment method must be verified
 

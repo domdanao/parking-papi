@@ -1,5 +1,5 @@
 import { SidebarProvider } from '@/components/ui/sidebar';
-import { ParkingProvider } from '@/providers/parking-provider';
+import { SimpleParkingProvider } from '@/providers/simple-parking-provider';
 import { SharedData } from '@/types';
 import { usePage } from '@inertiajs/react';
 
@@ -8,20 +8,24 @@ interface AppShellProps {
     variant?: 'header' | 'sidebar';
 }
 
+// Force cache break - changed function signature
 export function AppShell({ children, variant = 'header' }: AppShellProps) {
+    const page = usePage<SharedData>();
+    const userRole = page?.props?.auth?.user?.role;
+
     if (variant === 'header') {
         return (
-            <ParkingProvider>
+            <SimpleParkingProvider userRole={userRole}>
                 <div className="flex min-h-screen w-full flex-col">{children}</div>
-            </ParkingProvider>
+            </SimpleParkingProvider>
         );
     }
 
     // Use React Suspense to handle potential loading states
     return (
-        <ParkingProvider>
+        <SimpleParkingProvider userRole={userRole}>
             <SidebarShell>{children}</SidebarShell>
-        </ParkingProvider>
+        </SimpleParkingProvider>
     );
 }
 

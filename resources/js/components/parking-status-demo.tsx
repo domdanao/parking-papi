@@ -99,8 +99,8 @@ export function ParkingStatusDemo() {
               <div>
                 {location ? (
                   <div className="text-sm">
-                    <div>Lat: {location.latitude.toFixed(6)}</div>
-                    <div>Lng: {location.longitude.toFixed(6)}</div>
+                    <div>Lat: {Number(location.latitude).toFixed(6)}</div>
+                    <div>Lng: {Number(location.longitude).toFixed(6)}</div>
                     <div className="text-gray-500">
                       Accuracy: {location.accuracy?.toFixed(0)}m
                     </div>
@@ -163,7 +163,7 @@ export function ParkingStatusDemo() {
                         </Badge>
                       </div>
                       <div className="text-xs text-gray-500">
-                        <div>${slot.base_hourly_rate}/hour</div>
+                        <div>₱{slot.base_hourly_rate}/hour</div>
                         <div>Updated: {new Date(slot.updated_at).toLocaleTimeString()}</div>
                       </div>
                     </div>
@@ -202,7 +202,7 @@ export function ParkingStatusDemo() {
               </div>
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium">Amount:</span>
-                <span className="text-sm">${store.currentSession.amount}</span>
+                <span className="text-sm">₱{store.currentSession.amount}</span>
               </div>
               {store.currentSession.expires_at && (
                 <div className="flex items-center justify-between">

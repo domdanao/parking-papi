@@ -1,4 +1,4 @@
-import React from 'react';
+import { useEffect } from 'react';
 import { create } from 'zustand';
 import { devtools, subscribeWithSelector } from 'zustand/middleware';
 import { immer } from 'zustand/middleware/immer';
@@ -107,7 +107,7 @@ const initialState: ParkingState = {
   userLocation: null,
   searchFilters: {
     maxDistance: 1000, // 1km
-    maxPrice: 50, // $50/hour
+    maxPrice: 50, // ₱50/hour
     availableOnly: true,
     sortBy: 'distance'
   },
@@ -491,7 +491,7 @@ export const useParkingStore = create<ParkingStore>()(
                 id: `payment-${data.session_id}`,
                 type: 'payment_required',
                 title: 'Payment Required',
-                message: `Payment of $${data.amount} is due`,
+                message: `Payment of ₱${data.amount} is due`,
                 data: { session_id: data.session_id, amount: data.amount, due_at: data.due_at }
               });
               break;
@@ -552,7 +552,7 @@ export function useParkingStoreWithWebSocket(userId?: string) {
   const ws = useParkingWebSocket(userId);
 
   // Subscribe to real-time events
-  React.useEffect(() => {
+  useEffect(() => {
     const unsubscribers = [
       ws.subscribeToEvent('slot.status.changed', (data) =>
         store.handleRealTimeUpdate('slot.status.changed', data)
@@ -583,7 +583,7 @@ export function useParkingStoreWithWebSocket(userId?: string) {
   }, [ws, store]);
 
   // Handle connection state changes
-  React.useEffect(() => {
+  useEffect(() => {
     store.setOnlineStatus(ws.isConnected);
   }, [ws.isConnected, store]);
 

@@ -4,6 +4,44 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Camera, X, Scan } from 'lucide-react';
 import { useParkingApi } from '@/hooks/use-api';
 
+export function useQRScanner() {
+    const [isScanning, setIsScanning] = useState(false);
+    const [scanResult, setScanResult] = useState<string | null>(null);
+    const { scanQR, loading, error } = useParkingApi();
+
+    const openScanner = () => setIsScanning(true);
+    const closeScanner = () => setIsScanning(false);
+    const clearResult = () => setScanResult(null);
+
+    const QRScannerComponent = ({ onScan, onError }: { onScan?: (result: string) => void; onError?: (error: Error) => void }) => {
+        if (!isScanning) return null;
+
+        return (
+            <QRScanner
+                onScanComplete={(result) => {
+                    setScanResult(result);
+                    onScan?.(result);
+                    closeScanner();
+                }}
+                onClose={closeScanner}
+            />
+        );
+    };
+
+    return {
+        isScanning,
+        scanResult,
+        lastScan: scanResult,
+        loading,
+        error,
+        openScanner,
+        closeScanner,
+        clearResult,
+        setScanResult,
+        QRScannerComponent
+    };
+}
+
 interface QRScannerProps {
     onScanComplete?: (result: any) => void;
     onClose?: () => void;

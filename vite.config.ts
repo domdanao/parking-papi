@@ -20,4 +20,20 @@ export default defineConfig({
     esbuild: {
         jsx: 'automatic',
     },
+    server: {
+        hmr: false, // Disable HMR to prevent WebSocket issues
+        host: 'parking-papi.test',
+        port: 5173,
+    },
+    optimizeDeps: {
+        include: ['react', 'react-dom'], // Force single React instance
+        force: true,
+    },
+    build: {
+        rollupOptions: {
+            output: {
+                manualChunks: undefined,
+            },
+        },
+    },
 });

@@ -50,7 +50,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('slots')->group(function () {
         Route::get('/', [SlotManagementController::class, 'index'])->name('slots.index');
         Route::get('create', [SlotManagementController::class, 'create'])->name('slots.create');
+        Route::get('{id}', [SlotManagementController::class, 'show'])->name('slots.show');
         Route::get('{id}/edit', [SlotManagementController::class, 'edit'])->name('slots.edit');
+        Route::get('{id}/qr-code', [SlotManagementController::class, 'getQRCode'])->name('slots.qr-code');
+        Route::get('{id}/qr-code/download', [SlotManagementController::class, 'downloadQRCode'])->name('slots.qr-code.download');
     });
 });
 

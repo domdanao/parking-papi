@@ -152,7 +152,7 @@ export function QRCodeManagement({
             <h1>Parking Slot</h1>
             <div class="slot-info">
               <div>${slot.description || `Slot ${slotId.slice(-8)}`}</div>
-              <div class="rate">$${slot.base_hourly_rate}/hour</div>
+              <div class="rate">₱${slot.base_hourly_rate}/hour</div>
             </div>
             <img src="${qrUrl}" alt="QR Code" class="qr-image" />
             <div class="instructions">
@@ -246,7 +246,7 @@ export function QRCodeManagement({
                       {slot.description || `Slot ${slot.id.slice(-8)}`}
                     </div>
                     <div className="text-sm text-gray-500">
-                      ${slot.base_hourly_rate}/hour
+                      ₱{slot.base_hourly_rate}/hour
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-1">
@@ -276,10 +276,10 @@ export function QRCodeManagement({
                       {selectedSlotData.description || `Slot ${selectedSlotData.id.slice(-8)}`}
                     </CardTitle>
                     <CardDescription className="flex items-center gap-4">
-                      <span>${selectedSlotData.base_hourly_rate}/hour</span>
+                      <span>₱{selectedSlotData.base_hourly_rate}/hour</span>
                       <span className="flex items-center gap-1">
                         <MapPin className="w-3 h-3" />
-                        {selectedSlotData.location.latitude.toFixed(6)}, {selectedSlotData.location.longitude.toFixed(6)}
+                        {Number(selectedSlotData.location.latitude).toFixed(6)}, {Number(selectedSlotData.location.longitude).toFixed(6)}
                       </span>
                     </CardDescription>
                   </div>

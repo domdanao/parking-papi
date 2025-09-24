@@ -31,7 +31,7 @@ paths:
                   example: 25.00
                 currency:
                   type: string
-                  example: "USD"
+                  example: "PHP"
                 payment_type:
                   type: string
                   enum: [parking_session, wallet_topup, session_extension]

@@ -266,8 +266,8 @@ export function ParkingCountdown({ session, onExtend, onEnd, className }: Countd
           <div className="flex items-center gap-2 text-sm text-gray-600">
             <MapPin className="w-4 h-4" />
             <span>
-              Lat: {session.slot.location.latitude.toFixed(6)},
-              Lng: {session.slot.location.longitude.toFixed(6)}
+              Lat: {Number(session.slot.location.latitude).toFixed(6)},
+              Lng: {Number(session.slot.location.longitude).toFixed(6)}
             </span>
           </div>
         )}

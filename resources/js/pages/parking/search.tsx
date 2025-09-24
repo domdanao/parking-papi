@@ -210,7 +210,7 @@ function ParkingSlotCard({ slot }: { slot: ParkingSlot }) {
                         <div className="flex items-center gap-4 mb-3">
                             <div className="flex items-center gap-1">
                                 <DollarSign className="h-4 w-4 text-green-600" />
-                                <span className="font-medium">${slot.base_hourly_rate}/hour</span>
+                                <span className="font-medium">₱{slot.base_hourly_rate}/hour</span>
                             </div>
                             {slot.distance_meters && (
                                 <div className="flex items-center gap-1">

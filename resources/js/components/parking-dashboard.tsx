@@ -224,7 +224,7 @@ export function ParkingDashboard({ userRole }: ParkingDashboardProps) {
                     <DollarSign className="h-4 w-4 text-muted-foreground" />
                   </CardHeader>
                   <CardContent>
-                    <div className="text-2xl font-bold">$127.50</div>
+                    <div className="text-2xl font-bold">₱127.50</div>
                     <p className="text-xs text-muted-foreground">
                       +20.1% from yesterday
                     </p>
@@ -328,7 +328,7 @@ export function ParkingDashboard({ userRole }: ParkingDashboardProps) {
                                 <div>
                                   <h4 className="font-medium">Slot {slot.id.slice(-8)}</h4>
                                   <p className="text-sm text-gray-500">
-                                    ${slot.base_hourly_rate}/hour
+                                    ₱{slot.base_hourly_rate}/hour
                                   </p>
                                 </div>
                                 <Badge variant={slot.status === 'available' ? 'default' : 'secondary'}>

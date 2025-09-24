@@ -536,7 +536,7 @@ components:
               format: float
         currency:
           type: string
-          example: "USD"
+          example: "PHP"
 
     AlternativeSlot:
       type: object

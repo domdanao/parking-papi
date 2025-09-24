@@ -123,7 +123,7 @@ export default function ScanResult({ scanResult, encodedData, isAuthenticated, u
           {/* Location Map */}
           <div className="relative h-48 bg-gray-100 rounded-lg overflow-hidden mb-4">
             <iframe
-              src={`https://www.openstreetmap.org/export/embed.html?bbox=${parseFloat(slot.location.longitude.toString())-0.01},${parseFloat(slot.location.latitude.toString())-0.01},${parseFloat(slot.location.longitude.toString())+0.01},${parseFloat(slot.location.latitude.toString())+0.01}&layer=mapnik&marker=${parseFloat(slot.location.latitude.toString())},${parseFloat(slot.location.longitude.toString())}`}
+              src={`https://www.openstreetmap.org/export/embed.html?bbox=${Number(slot.location.longitude)-0.01},${Number(slot.location.latitude)-0.01},${Number(slot.location.longitude)+0.01},${Number(slot.location.latitude)+0.01}&layer=mapnik&marker=${Number(slot.location.latitude)},${Number(slot.location.longitude)}`}
               width="100%"
               height="100%"
               style={{ border: 0 }}
@@ -131,7 +131,7 @@ export default function ScanResult({ scanResult, encodedData, isAuthenticated, u
               loading="lazy"
             />
             <div className="absolute bottom-2 left-2 bg-white px-2 py-1 rounded text-xs">
-              <div className="font-medium">{parseFloat(slot.location.latitude.toString()).toFixed(6)}</div>
+              <div className="font-medium">{Number(slot.location.latitude).toFixed(6)}, {Number(slot.location.longitude).toFixed(6)}</div>
               <Link href={mapsUrl} target="_blank" className="text-blue-600 hover:underline">
                 View larger map
               </Link>
