@@ -40,6 +40,10 @@ function Map({
 
     const ref = useCallback((node: HTMLDivElement) => {
         if (node !== null && !map) {
+            // Detect dark mode
+            const isDarkMode = document.documentElement.classList.contains('dark') ||
+                             window.matchMedia('(prefers-color-scheme: dark)').matches;
+
             const newMap = new window.google.maps.Map(node, {
                 center,
                 zoom,
@@ -49,11 +53,8 @@ function Map({
                 zoomControl: true,
                 gestureHandling: 'cooperative',
                 styles: [
-                    {
-                        featureType: 'poi',
-                        elementType: 'labels',
-                        stylers: [{ visibility: 'off' }]
-                    }
+                    // Keep light map appearance, just hide POI labels
+                    { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] }
                 ]
             });
 
@@ -86,12 +87,19 @@ function Map({
 
             // Add info window if requested
             if (showInfoWindow && (title || address)) {
+                // Detect dark mode for InfoWindow styling
+                const isDarkMode = document.documentElement.classList.contains('dark') ||
+                                 window.matchMedia('(prefers-color-scheme: dark)').matches;
+
                 const infoWindow = new google.maps.InfoWindow({
                     content: `
-                        <div style="padding: 8px; min-width: 200px;">
-                            ${title ? `<h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600;">${title}</h3>` : ''}
-                            ${address ? `<p style="margin: 0; font-size: 14px; color: #666;">${address}</p>` : ''}
-                            <p style="margin: 4px 0 0 0; font-size: 12px; color: #888;">
+                        <div style="padding: 8px; min-width: 200px; ${isDarkMode ?
+                            'background-color: #334155; color: #f1f5f9; border-radius: 8px;' :
+                            'background-color: white; color: #1e293b;'
+                        }">
+                            ${title ? `<h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600; ${isDarkMode ? 'color: #f1f5f9;' : 'color: #1e293b;'}">${title}</h3>` : ''}
+                            ${address ? `<p style="margin: 0; font-size: 14px; ${isDarkMode ? 'color: #cbd5e1;' : 'color: #666;'}">${address}</p>` : ''}
+                            <p style="margin: 4px 0 0 0; font-size: 12px; ${isDarkMode ? 'color: #94a3b8;' : 'color: #888;'}">
                                 ${center.lat.toFixed(6)}, ${center.lng.toFixed(6)}
                             </p>
                         </div>
@@ -116,10 +124,10 @@ const render = (status: Status) => {
     switch (status) {
         case Status.LOADING:
             return (
-                <div className="flex items-center justify-center h-64 bg-muted rounded-lg">
+                <div className="flex items-center justify-center h-64 bg-gray-100 dark:bg-slate-800 rounded-lg">
                     <div className="text-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                        <p className="text-sm text-muted-foreground">Loading map...</p>
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400 mx-auto mb-2"></div>
+                        <p className="text-sm text-gray-600 dark:text-slate-300">Loading map...</p>
                     </div>
                 </div>
             );
@@ -156,11 +164,11 @@ export default function MapDisplay({
 
 
     return (
-        <div className={`border rounded-lg overflow-hidden ${className}`} style={{ height }}>
+        <div className={`border border-gray-200 dark:border-slate-600 rounded-lg overflow-hidden ${className}`} style={{ height }}>
             <Wrapper
                 apiKey={GOOGLE_MAPS_API_KEY}
                 render={render}
-                libraries={['places']}
+                libraries={['places', 'geometry']}
             >
                 <Map
                     center={location}

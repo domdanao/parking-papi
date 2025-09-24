@@ -14,7 +14,7 @@ import {
   Printer,
   BarChart3,
   MapPin,
-  DollarSign,
+  Banknote,
   Calendar
 } from 'lucide-react';
 
@@ -235,26 +235,38 @@ export function QRCodeManagement({
                 key={slot.id}
                 className={`p-3 border rounded-lg cursor-pointer transition-colors ${
                   selectedSlot === slot.id
-                    ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300'
+                    ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-400'
+                    : 'border-gray-200 dark:border-slate-600 hover:border-gray-300 dark:hover:border-slate-500 bg-white dark:bg-slate-800'
                 }`}
                 onClick={() => setSelectedSlot(slot.id)}
               >
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="font-medium">
+                    <div className="font-medium text-gray-900 dark:text-slate-100">
                       {slot.description || `Slot ${slot.id.slice(-8)}`}
                     </div>
-                    <div className="text-sm text-gray-500">
-                      ₱{slot.base_hourly_rate}/hour
+                    <div className="text-sm text-gray-500 dark:text-slate-400 flex items-center gap-1">
+                      <span>₱{slot.base_hourly_rate}/hour</span>
                     </div>
                   </div>
                   <div className="flex flex-col items-end gap-1">
-                    <Badge variant={slot.status === 'available' ? 'default' : 'secondary'}>
+                    <Badge
+                      variant={slot.status === 'available' ? 'default' : 'secondary'}
+                      className={slot.status === 'available' ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400' : ''}
+                    >
                       {slot.status}
                     </Badge>
                     {slot.qr_code && (
-                      <Badge variant={getStatusColor(slot.qr_code.status)} className="text-xs">
+                      <Badge
+                        variant={getStatusColor(slot.qr_code.status)}
+                        className={`text-xs ${
+                          slot.qr_code.status === 'active'
+                            ? 'bg-blue-100 text-blue-800 dark:bg-blue-900/30 dark:text-blue-400'
+                            : slot.qr_code.status === 'inactive'
+                            ? 'bg-gray-100 text-gray-800 dark:bg-slate-700 dark:text-slate-300'
+                            : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                        }`}
+                      >
                         QR: {slot.qr_code.status}
                       </Badge>
                     )}
@@ -266,19 +278,22 @@ export function QRCodeManagement({
         </Card>
 
         {/* QR Code Details */}
-        <Card className="lg:col-span-2">
+        <Card className="lg:col-span-2 bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700">
           {selectedSlotData ? (
             <Tabs defaultValue="qr-code">
               <CardHeader>
                 <div className="flex items-center justify-between">
                   <div>
-                    <CardTitle>
+                    <CardTitle className="text-gray-900 dark:text-slate-100">
                       {selectedSlotData.description || `Slot ${selectedSlotData.id.slice(-8)}`}
                     </CardTitle>
-                    <CardDescription className="flex items-center gap-4">
-                      <span>₱{selectedSlotData.base_hourly_rate}/hour</span>
+                    <CardDescription className="flex items-center gap-4 text-gray-600 dark:text-slate-400">
                       <span className="flex items-center gap-1">
-                        <MapPin className="w-3 h-3" />
+                        <Banknote className="w-3 h-3 text-green-600 dark:text-green-400" />
+                        ₱{selectedSlotData.base_hourly_rate}/hour
+                      </span>
+                      <span className="flex items-center gap-1">
+                        <MapPin className="w-3 h-3 text-purple-600 dark:text-purple-400" />
                         {Number(selectedSlotData.location.latitude).toFixed(6)}, {Number(selectedSlotData.location.longitude).toFixed(6)}
                       </span>
                     </CardDescription>
@@ -300,10 +315,19 @@ export function QRCodeManagement({
                           <img
                             src={`/storage/${selectedSlotData.qr_code.qr_image_path}`}
                             alt="QR Code"
-                            className="w-48 h-48 border rounded-lg"
+                            className="w-48 h-48 border border-gray-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700"
                           />
                           <div className="absolute top-2 right-2">
-                            <Badge variant={getStatusColor(selectedSlotData.qr_code.status)}>
+                            <Badge
+                              variant={getStatusColor(selectedSlotData.qr_code.status)}
+                              className={
+                                selectedSlotData.qr_code.status === 'active'
+                                  ? 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-400'
+                                  : selectedSlotData.qr_code.status === 'inactive'
+                                  ? 'bg-gray-100 text-gray-800 dark:bg-slate-700 dark:text-slate-300'
+                                  : 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-400'
+                              }
+                            >
                               {selectedSlotData.qr_code.status}
                             </Badge>
                           </div>
@@ -362,13 +386,13 @@ export function QRCodeManagement({
 
                       {/* QR Code Info */}
                       <div className="grid grid-cols-2 gap-4 text-sm">
-                        <div>
-                          <span className="font-medium">Scan Count:</span>
-                          <div className="text-lg font-bold">{selectedSlotData.qr_code.scan_count}</div>
+                        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800">
+                          <span className="font-medium text-gray-700 dark:text-slate-300">Scan Count:</span>
+                          <div className="text-lg font-bold text-blue-600 dark:text-blue-400">{selectedSlotData.qr_code.scan_count}</div>
                         </div>
-                        <div>
-                          <span className="font-medium">Last Scanned:</span>
-                          <div>
+                        <div className="p-3 bg-purple-50 dark:bg-purple-900/20 rounded-lg border border-purple-200 dark:border-purple-800">
+                          <span className="font-medium text-gray-700 dark:text-slate-300">Last Scanned:</span>
+                          <div className="text-sm font-medium text-purple-600 dark:text-purple-400">
                             {selectedSlotData.qr_code.last_scanned_at
                               ? new Date(selectedSlotData.qr_code.last_scanned_at).toLocaleDateString()
                               : 'Never'
@@ -378,9 +402,9 @@ export function QRCodeManagement({
                       </div>
 
                       {selectedSlotData.qr_code.status === 'inactive' && (
-                        <Alert>
-                          <EyeOff className="h-4 w-4" />
-                          <AlertDescription>
+                        <Alert className="bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800">
+                          <EyeOff className="h-4 w-4 text-yellow-600 dark:text-yellow-400" />
+                          <AlertDescription className="text-yellow-800 dark:text-yellow-200">
                             This QR code is currently disabled. Customers cannot scan it to book this slot.
                           </AlertDescription>
                         </Alert>
@@ -420,10 +444,10 @@ export function QRCodeManagement({
                       <Card>
                         <CardContent className="p-4">
                           <div className="flex items-center gap-2">
-                            <DollarSign className="w-5 h-5 text-green-500" />
+                            <Banknote className="w-5 h-5 text-green-500" />
                             <span className="text-sm font-medium">Rate</span>
                           </div>
-                          <div className="text-2xl font-bold">${selectedSlotData.base_hourly_rate}</div>
+                          <div className="text-2xl font-bold">₱{selectedSlotData.base_hourly_rate}</div>
                           <div className="text-xs text-gray-500">per hour</div>
                         </CardContent>
                       </Card>

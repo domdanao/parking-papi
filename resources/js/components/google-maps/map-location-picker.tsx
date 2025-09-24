@@ -36,6 +36,10 @@ function Map({
 
     const ref = useCallback((node: HTMLDivElement) => {
         if (node !== null && !map) {
+            // Detect dark mode
+            const isDarkMode = document.documentElement.classList.contains('dark') ||
+                             window.matchMedia('(prefers-color-scheme: dark)').matches;
+
             const newMap = new window.google.maps.Map(node, {
                 center,
                 zoom,
@@ -44,11 +48,8 @@ function Map({
                 fullscreenControl: true,
                 zoomControl: true,
                 styles: [
-                    {
-                        featureType: 'poi',
-                        elementType: 'labels',
-                        stylers: [{ visibility: 'off' }]
-                    }
+                    // Keep light map appearance, just hide POI labels
+                    { featureType: 'poi', elementType: 'labels', stylers: [{ visibility: 'off' }] }
                 ]
             });
 
@@ -127,10 +128,10 @@ const render = (status: Status) => {
     switch (status) {
         case Status.LOADING:
             return (
-                <div className="flex items-center justify-center h-64 bg-muted rounded-lg">
+                <div className="flex items-center justify-center h-64 bg-gray-100 dark:bg-slate-800 rounded-lg">
                     <div className="text-center">
-                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-2"></div>
-                        <p className="text-sm text-muted-foreground">Loading Google Maps...</p>
+                        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 dark:border-blue-400 mx-auto mb-2"></div>
+                        <p className="text-sm text-gray-600 dark:text-slate-300">Loading Google Maps...</p>
                     </div>
                 </div>
             );
@@ -269,13 +270,13 @@ export default function MapLocationPicker({
 
                 {/* Current Location Display */}
                 {location.address && (
-                    <div className="p-3 bg-muted rounded-lg">
+                    <div className="p-3 bg-gray-50 dark:bg-slate-700/50 rounded-lg border border-gray-100 dark:border-slate-600">
                         <div className="flex items-center gap-2 text-sm">
-                            <MapPin className="h-4 w-4 text-primary" />
-                            <span className="font-medium">Selected Location:</span>
+                            <MapPin className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                            <span className="font-medium text-gray-900 dark:text-slate-100">Selected Location:</span>
                         </div>
-                        <p className="text-sm text-muted-foreground mt-1">{location.address}</p>
-                        <p className="text-xs text-muted-foreground">
+                        <p className="text-sm text-gray-600 dark:text-slate-300 mt-1">{location.address}</p>
+                        <p className="text-xs text-gray-500 dark:text-slate-400">
                             Coordinates: {location.lat.toFixed(6)}, {location.lng.toFixed(6)}
                         </p>
                     </div>
@@ -283,7 +284,7 @@ export default function MapLocationPicker({
             </div>
 
             {/* Google Map */}
-            <div className="border rounded-lg overflow-hidden" style={{ height }}>
+            <div className="border border-gray-200 dark:border-slate-600 rounded-lg overflow-hidden" style={{ height }}>
                 <Wrapper
                     apiKey={GOOGLE_MAPS_API_KEY}
                     render={render}
@@ -297,7 +298,7 @@ export default function MapLocationPicker({
                 </Wrapper>
             </div>
 
-            <p className="text-xs text-muted-foreground">
+            <p className="text-xs text-gray-500 dark:text-slate-400">
                 💡 Click on the map or drag the marker to select the exact parking slot location
             </p>
         </div>

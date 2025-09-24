@@ -78,6 +78,58 @@ class SlotManagementController extends Controller
         ]);
     }
 
+    public function update(Request $request, string $id)
+    {
+        $slot = ParkingSlot::findOrFail($id);
+
+        // Check ownership
+        if ($slot->slot_owner_id !== $request->user()->id) {
+            abort(403, 'Access denied. You can only update your own slots.');
+        }
+
+        $validated = $request->validate([
+            'slot_number' => 'required|string|max:50',
+            'latitude' => 'required|numeric|between:-90,90',
+            'longitude' => 'required|numeric|between:-180,180',
+            'address' => 'required|string|max:500',
+            'landmark_references' => 'nullable|string|max:1000',
+            'dimensions' => 'nullable|array',
+            'dimensions.length' => 'nullable|numeric|min:0',
+            'dimensions.width' => 'nullable|numeric|min:0',
+            'dimensions.height' => 'nullable|numeric|min:0',
+            'surface_type' => 'nullable|string|max:50',
+            'accessibility_features' => 'nullable|array',
+            'vehicle_compatibility' => 'nullable|array',
+            'amenities' => 'nullable|array',
+            'base_hourly_rate' => 'required|numeric|min:0',
+            'minimum_duration_minutes' => 'nullable|integer|min:0',
+            'maximum_duration_minutes' => 'nullable|integer|min:0',
+            'special_conditions' => 'nullable|string|max:1000',
+        ]);
+
+        // Update the slot
+        $slot->update([
+            'slot_number' => $validated['slot_number'],
+            'latitude' => $validated['latitude'],
+            'longitude' => $validated['longitude'],
+            'address' => $validated['address'],
+            'landmark_references' => $validated['landmark_references'] ?? null,
+            'dimensions' => $validated['dimensions'] ?? null,
+            'surface_type' => $validated['surface_type'] ?? null,
+            'accessibility_features' => $validated['accessibility_features'] ?? [],
+            'vehicle_compatibility' => $validated['vehicle_compatibility'] ?? [],
+            'amenities' => $validated['amenities'] ?? [],
+            'base_hourly_rate' => $validated['base_hourly_rate'],
+            'minimum_duration_minutes' => $validated['minimum_duration_minutes'] ?? null,
+            'maximum_duration_minutes' => $validated['maximum_duration_minutes'] ?? null,
+            'special_conditions' => $validated['special_conditions'] ?? null,
+            // Reset approval status when slot is updated
+            'approval_status' => 'submitted',
+        ]);
+
+        return redirect()->route('slots.index')->with('success', 'Parking slot updated successfully!');
+    }
+
     public function downloadQRCode(Request $request, string $id, QRCodeService $qrService): BinaryFileResponse
     {
         $slot = ParkingSlot::findOrFail($id);

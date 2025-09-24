@@ -11,7 +11,7 @@ import { type BreadcrumbItem, type ParkingSlot, type ParkingSession } from '@/ty
 import { Head, Link } from '@inertiajs/react';
 import {
     MapPin,
-    DollarSign,
+    Banknote,
     Edit,
     ArrowLeft,
     Building,
@@ -116,12 +116,12 @@ export default function ShowSlot({ slot, metrics }: SlotShowProps) {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title={`Slot ${slot.slot_number}`} />
-            <div className="flex h-full flex-1 flex-col gap-6 p-6">
+            <div className="flex h-full flex-1 flex-col gap-6 p-6 bg-blue-50 dark:bg-slate-900">
                 {/* Header */}
                 <div className="flex items-center justify-between">
                     <div>
                         <div className="flex items-center gap-3 mb-2">
-                            <h1 className="text-3xl font-bold">Slot {slot.slot_number}</h1>
+                            <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-100">Slot {slot.slot_number}</h1>
                             <Badge variant={getStatusColor(slot.status)}>
                                 {slot.status}
                             </Badge>
@@ -129,13 +129,13 @@ export default function ShowSlot({ slot, metrics }: SlotShowProps) {
                                 {slot.approval_status.replace('_', ' ')}
                             </Badge>
                         </div>
-                        <div className="flex items-center gap-2 text-muted-foreground">
-                            <MapPin className="h-4 w-4" />
+                        <div className="flex items-center gap-2 text-blue-600 dark:text-slate-300">
+                            <MapPin className="h-4 w-4 text-blue-500" />
                             <span>{slot.address}</span>
                         </div>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm">
+                        <Button variant="outline" size="sm" className="bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-600">
                             <Share className="mr-2 h-4 w-4" />
                             Share
                         </Button>
@@ -143,17 +143,18 @@ export default function ShowSlot({ slot, metrics }: SlotShowProps) {
                             variant="outline"
                             size="sm"
                             onClick={() => setIsQRModalOpen(true)}
+                            className="bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-600"
                         >
                             <QrCode className="mr-2 h-4 w-4" />
                             View QR Code
                         </Button>
                         <Link href={`/slots/${slot.id}/edit`}>
-                            <Button size="sm">
+                            <Button size="sm" className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white shadow-sm">
                                 <Edit className="mr-2 h-4 w-4" />
                                 Edit Slot
                             </Button>
                         </Link>
-                        <Button variant="outline" onClick={() => window.history.back()}>
+                        <Button variant="outline" onClick={() => window.history.back()} className="bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-600">
                             <ArrowLeft className="mr-2 h-4 w-4" />
                             Back
                         </Button>
@@ -165,49 +166,55 @@ export default function ShowSlot({ slot, metrics }: SlotShowProps) {
                     <div className="lg:col-span-2 space-y-6">
                         {/* Performance Metrics */}
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                            <Card>
+                            <Card className="bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/10 border-green-200 dark:border-green-700">
                                 <CardContent className="p-6">
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <p className="text-sm font-medium text-muted-foreground">Total Revenue</p>
-                                            <p className="text-2xl font-bold">{formatCurrency(metrics.total_revenue)}</p>
+                                            <p className="text-sm font-medium text-green-700 dark:text-green-300">Total Revenue</p>
+                                            <p className="text-2xl font-bold text-green-800 dark:text-green-100">{formatCurrency(metrics.total_revenue)}</p>
                                         </div>
-                                        <DollarSign className="h-8 w-8 text-green-600" />
+                                        <div className="p-3 bg-green-200 dark:bg-green-700 rounded-full">
+                                            <Banknote className="h-6 w-6 text-green-700 dark:text-green-200" />
+                                        </div>
                                     </div>
                                 </CardContent>
                             </Card>
-                            <Card>
+                            <Card className="bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/10 border-blue-200 dark:border-blue-700">
                                 <CardContent className="p-6">
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <p className="text-sm font-medium text-muted-foreground">Total Sessions</p>
-                                            <p className="text-2xl font-bold">{metrics.total_sessions}</p>
+                                            <p className="text-sm font-medium text-blue-700 dark:text-blue-300">Total Sessions</p>
+                                            <p className="text-2xl font-bold text-blue-800 dark:text-blue-100">{metrics.total_sessions}</p>
                                         </div>
-                                        <Users className="h-8 w-8 text-blue-600" />
+                                        <div className="p-3 bg-blue-200 dark:bg-blue-700 rounded-full">
+                                            <Users className="h-6 w-6 text-blue-700 dark:text-blue-200" />
+                                        </div>
                                     </div>
                                 </CardContent>
                             </Card>
-                            <Card>
+                            <Card className="bg-gradient-to-br from-purple-50 to-purple-100 dark:from-purple-900/20 dark:to-purple-800/10 border-purple-200 dark:border-purple-700">
                                 <CardContent className="p-6">
                                     <div className="flex items-center justify-between">
                                         <div>
-                                            <p className="text-sm font-medium text-muted-foreground">Occupancy Rate</p>
-                                            <p className="text-2xl font-bold">{metrics.occupancy_rate}%</p>
+                                            <p className="text-sm font-medium text-purple-700 dark:text-purple-300">Occupancy Rate</p>
+                                            <p className="text-2xl font-bold text-purple-800 dark:text-purple-100">{metrics.occupancy_rate}%</p>
                                         </div>
-                                        <TrendingUp className="h-8 w-8 text-purple-600" />
+                                        <div className="p-3 bg-purple-200 dark:bg-purple-700 rounded-full">
+                                            <TrendingUp className="h-6 w-6 text-purple-700 dark:text-purple-200" />
+                                        </div>
                                     </div>
                                 </CardContent>
                             </Card>
                         </div>
 
                         {/* Location Map */}
-                        <Card>
+                        <Card className="bg-gradient-to-br from-blue-50 to-indigo-50 dark:from-slate-800 dark:to-slate-700 border-blue-200 dark:border-slate-600">
                             <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <MapPin className="h-5 w-5" />
+                                <CardTitle className="flex items-center gap-2 text-blue-800 dark:text-slate-100">
+                                    <MapPin className="h-5 w-5 text-blue-600" />
                                     Location
                                 </CardTitle>
-                                <CardDescription>
+                                <CardDescription className="text-blue-600 dark:text-slate-300">
                                     Exact parking slot location
                                 </CardDescription>
                             </CardHeader>
@@ -223,28 +230,28 @@ export default function ShowSlot({ slot, metrics }: SlotShowProps) {
                                     showInfoWindow={true}
                                     zoom={17}
                                 />
-                                <div className="mt-3 p-3 bg-muted/50 rounded-lg">
+                                <div className="mt-3 p-3 bg-blue-100 dark:bg-slate-700/50 rounded-lg border border-blue-200 dark:border-slate-600">
                                     <div className="flex items-center gap-2 text-sm">
-                                        <MapPin className="h-4 w-4 text-primary" />
-                                        <span className="font-medium">{slot.address}</span>
+                                        <MapPin className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                                        <span className="font-medium text-blue-800 dark:text-slate-100">{slot.address}</span>
                                     </div>
                                     {slot.landmark_references && (
-                                        <p className="text-sm text-muted-foreground mt-1">
+                                        <p className="text-sm text-blue-700 dark:text-slate-300 mt-1">
                                             <span className="font-medium">Landmarks:</span> {slot.landmark_references}
                                         </p>
                                     )}
-                                    <p className="text-xs text-muted-foreground mt-2">
-                                        Coordinates: {Number(slot.latitude).toFixed(6)}, {Number(slot.longitude).toFixed(6)}
+                                    <p className="text-xs text-blue-600 dark:text-slate-400 mt-2">
+                                        Coordinates: {typeof slot.latitude === 'number' ? slot.latitude.toFixed(6) : Number(slot.latitude).toFixed(6)}, {typeof slot.longitude === 'number' ? slot.longitude.toFixed(6) : Number(slot.longitude).toFixed(6)}
                                     </p>
                                 </div>
                             </CardContent>
                         </Card>
 
                         {/* Slot Details */}
-                        <Card>
+                        <Card className="bg-gradient-to-br from-orange-50 to-yellow-50 dark:from-slate-800 dark:to-slate-700 border-orange-200 dark:border-slate-600">
                             <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Building className="h-5 w-5" />
+                                <CardTitle className="flex items-center gap-2 text-orange-800 dark:text-slate-100">
+                                    <Building className="h-5 w-5 text-orange-600" />
                                     Slot Details
                                 </CardTitle>
                             </CardHeader>
@@ -252,11 +259,11 @@ export default function ShowSlot({ slot, metrics }: SlotShowProps) {
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div className="space-y-4">
                                         <div>
-                                            <h4 className="font-medium mb-2">Pricing</h4>
+                                            <h4 className="font-medium mb-2 text-orange-800 dark:text-slate-100">Pricing</h4>
                                             <div className="space-y-1 text-sm">
                                                 <div className="flex justify-between">
-                                                    <span>Base Rate:</span>
-                                                    <span className="font-medium">{formatCurrency(slot.base_hourly_rate)}/hour</span>
+                                                    <span className="text-orange-600 dark:text-slate-400">Base Rate:</span>
+                                                    <span className="font-medium text-green-700 dark:text-green-300">{formatCurrency(slot.base_hourly_rate)}/hour</span>
                                                 </div>
                                                 {slot.minimum_duration_minutes && (
                                                     <div className="flex justify-between">
@@ -275,20 +282,20 @@ export default function ShowSlot({ slot, metrics }: SlotShowProps) {
 
                                         {slot.dimensions && (
                                             <div>
-                                                <h4 className="font-medium mb-2">Dimensions</h4>
+                                                <h4 className="font-medium mb-2 text-orange-800 dark:text-slate-100">Dimensions</h4>
                                                 <div className="space-y-1 text-sm">
                                                     <div className="flex justify-between">
-                                                        <span>Length:</span>
-                                                        <span>{slot.dimensions.length}m</span>
+                                                        <span className="text-orange-600 dark:text-slate-400">Length:</span>
+                                                        <span className="text-orange-800 dark:text-slate-200">{slot.dimensions.length}m</span>
                                                     </div>
                                                     <div className="flex justify-between">
-                                                        <span>Width:</span>
-                                                        <span>{slot.dimensions.width}m</span>
+                                                        <span className="text-orange-600 dark:text-slate-400">Width:</span>
+                                                        <span className="text-orange-800 dark:text-slate-200">{slot.dimensions.width}m</span>
                                                     </div>
                                                     {slot.dimensions.height && (
                                                         <div className="flex justify-between">
-                                                            <span>Height:</span>
-                                                            <span>{slot.dimensions.height}m</span>
+                                                            <span className="text-orange-600 dark:text-slate-400">Height:</span>
+                                                            <span className="text-orange-800 dark:text-slate-200">{slot.dimensions.height}m</span>
                                                         </div>
                                                     )}
                                                 </div>
@@ -303,7 +310,7 @@ export default function ShowSlot({ slot, metrics }: SlotShowProps) {
                                                 <div>
                                                     <span className="text-muted-foreground">Coordinates:</span>
                                                     <br />
-                                                    <span>{slot.latitude}, {slot.longitude}</span>
+                                                    <span>{typeof slot.latitude === 'number' ? slot.latitude : Number(slot.latitude)}, {typeof slot.longitude === 'number' ? slot.longitude : Number(slot.longitude)}</span>
                                                 </div>
                                                 {slot.landmark_references && (
                                                     <div>
@@ -387,13 +394,13 @@ export default function ShowSlot({ slot, metrics }: SlotShowProps) {
                         </Card>
 
                         {/* Recent Activity */}
-                        <Card>
+                        <Card className="bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-slate-800 dark:to-slate-700 border-indigo-200 dark:border-slate-600">
                             <CardHeader>
-                                <CardTitle className="flex items-center gap-2">
-                                    <Calendar className="h-5 w-5" />
+                                <CardTitle className="flex items-center gap-2 text-indigo-800 dark:text-slate-100">
+                                    <Calendar className="h-5 w-5 text-indigo-600" />
                                     Recent Activity
                                 </CardTitle>
-                                <CardDescription>
+                                <CardDescription className="text-indigo-600 dark:text-slate-300">
                                     Latest parking sessions for this slot
                                 </CardDescription>
                             </CardHeader>
@@ -438,58 +445,58 @@ export default function ShowSlot({ slot, metrics }: SlotShowProps) {
                     {/* Sidebar */}
                     <div className="space-y-6">
                         {/* Quick Stats */}
-                        <Card>
+                        <Card className="bg-gradient-to-br from-emerald-50 to-teal-50 dark:from-slate-800 dark:to-slate-700 border-emerald-200 dark:border-slate-600">
                             <CardHeader>
-                                <CardTitle className="text-lg">Quick Actions</CardTitle>
+                                <CardTitle className="text-lg text-emerald-800 dark:text-slate-100">Quick Actions</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-3">
                                 <Button
-                                    className="w-full"
+                                    className="w-full bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white shadow-sm"
                                     size="sm"
                                     onClick={() => setIsQRModalOpen(true)}
                                 >
                                     <QrCode className="mr-2 h-4 w-4" />
                                     QR Code
                                 </Button>
-                                <Button variant="outline" className="w-full" size="sm">
+                                <Button variant="outline" className="w-full bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-600" size="sm">
                                     <TrendingUp className="mr-2 h-4 w-4" />
                                     View Analytics
                                 </Button>
                                 <Separator />
                                 <div className="space-y-2 text-sm">
                                     <div className="flex justify-between">
-                                        <span>Created:</span>
-                                        <span>{new Date(slot.created_at).toLocaleDateString()}</span>
+                                        <span className="text-gray-600 dark:text-slate-400">Created:</span>
+                                        <span className="text-gray-900 dark:text-slate-100">{new Date(slot.created_at).toLocaleDateString()}</span>
                                     </div>
                                     <div className="flex justify-between">
-                                        <span>Last Updated:</span>
-                                        <span>{new Date(slot.updated_at).toLocaleDateString()}</span>
+                                        <span className="text-gray-600 dark:text-slate-400">Last Updated:</span>
+                                        <span className="text-gray-900 dark:text-slate-100">{new Date(slot.updated_at).toLocaleDateString()}</span>
                                     </div>
                                 </div>
                             </CardContent>
                         </Card>
 
                         {/* Status Overview */}
-                        <Card>
+                        <Card className="bg-gradient-to-br from-rose-50 to-pink-50 dark:from-slate-800 dark:to-slate-700 border-rose-200 dark:border-slate-600">
                             <CardHeader>
-                                <CardTitle className="text-lg">Status Overview</CardTitle>
+                                <CardTitle className="text-lg text-rose-800 dark:text-slate-100">Status Overview</CardTitle>
                             </CardHeader>
                             <CardContent className="space-y-4">
                                 <div className="space-y-2">
                                     <div className="flex justify-between text-sm">
-                                        <span>Operational Status</span>
+                                        <span className="text-rose-600 dark:text-slate-400">Operational Status</span>
                                         <Badge variant={slot.is_active ? 'default' : 'secondary'}>
                                             {slot.is_active ? 'Active' : 'Inactive'}
                                         </Badge>
                                     </div>
                                     <div className="flex justify-between text-sm">
-                                        <span>Current Status</span>
+                                        <span className="text-rose-600 dark:text-slate-400">Current Status</span>
                                         <Badge variant={getStatusColor(slot.status)}>
                                             {slot.status}
                                         </Badge>
                                     </div>
                                     <div className="flex justify-between text-sm">
-                                        <span>Approval Status</span>
+                                        <span className="text-rose-600 dark:text-slate-400">Approval Status</span>
                                         <Badge variant={getApprovalColor(slot.approval_status)}>
                                             {slot.approval_status.replace('_', ' ')}
                                         </Badge>

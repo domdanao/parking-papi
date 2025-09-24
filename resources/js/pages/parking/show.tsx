@@ -7,7 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem, type ParkingSlot } from '@/types';
 import { Head, router } from '@inertiajs/react';
-import { MapPin, Clock, DollarSign, Star, User, Camera, Car, Shield, Zap } from 'lucide-react';
+import { MapPin, Clock, Banknote, Star, User, Camera, Car, Shield, Zap } from 'lucide-react';
 import { useState } from 'react';
 
 interface ParkingSlotDetailProps {
@@ -87,7 +87,7 @@ export default function ParkingSlotDetail({ slot }: ParkingSlotDetailProps) {
                                         </div>
                                         <div className="flex items-center gap-4">
                                             <div className="flex items-center gap-1">
-                                                <DollarSign className="h-4 w-4 text-green-600" />
+                                                <Banknote className="h-4 w-4 text-green-600" />
                                                 <span className="font-medium text-lg">₱{slot.base_hourly_rate}/hour</span>
                                             </div>
                                             <div className="flex items-center gap-1">

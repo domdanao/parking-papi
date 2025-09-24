@@ -6,7 +6,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem, type ParkingSlot } from '@/types';
 import { Head, Link, router } from '@inertiajs/react';
-import { MapPin, Clock, DollarSign, Star, Filter, Search } from 'lucide-react';
+import { MapPin, Clock, Banknote, Star, Filter, Search } from 'lucide-react';
 import { useState } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
@@ -209,7 +209,7 @@ function ParkingSlotCard({ slot }: { slot: ParkingSlot }) {
 
                         <div className="flex items-center gap-4 mb-3">
                             <div className="flex items-center gap-1">
-                                <DollarSign className="h-4 w-4 text-green-600" />
+                                <Banknote className="h-4 w-4 text-green-600" />
                                 <span className="font-medium">₱{slot.base_hourly_rate}/hour</span>
                             </div>
                             {slot.distance_meters && (

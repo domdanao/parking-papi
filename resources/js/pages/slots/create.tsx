@@ -14,7 +14,7 @@ import { Head, router } from '@inertiajs/react';
 import {
     MapPin,
     Car,
-    DollarSign,
+    Banknote,
     Camera,
     ChevronLeft,
     ChevronRight,
@@ -263,7 +263,7 @@ export default function CreateSlot() {
         switch (step) {
             case 1: return MapPin;
             case 2: return Car;
-            case 3: return DollarSign;
+            case 3: return Banknote;
             case 4: return Camera;
             default: return MapPin;
         }
@@ -282,14 +282,14 @@ export default function CreateSlot() {
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="Add New Parking Slot" />
-            <div className="flex h-full flex-1 flex-col gap-6 p-6">
+            <div className="flex h-full flex-1 flex-col gap-6 p-6 bg-gray-50 dark:bg-slate-900">
                 <div>
-                    <h1 className="text-3xl font-bold">Add New Parking Slot</h1>
-                    <p className="text-muted-foreground">Create a new parking slot to start earning revenue</p>
+                    <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-100">Add New Parking Slot</h1>
+                    <p className="text-gray-600 dark:text-slate-400">Create a new parking slot to start earning revenue</p>
                 </div>
 
                 {/* Progress Indicator */}
-                <Card>
+                <Card className="bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700">
                     <CardContent className="p-6">
                         <div className="flex items-center justify-between">
                             {Array.from({ length: totalSteps }, (_, index) => {
@@ -332,16 +332,16 @@ export default function CreateSlot() {
                 </Card>
 
                 {/* Step Content */}
-                <Card>
+                <Card className="bg-white dark:bg-slate-800 border-gray-200 dark:border-slate-700">
                     <CardHeader>
-                        <CardTitle className="flex items-center gap-2">
+                        <CardTitle className="flex items-center gap-2 text-gray-900 dark:text-slate-100">
                             {(() => {
                                 const Icon = getStepIcon(currentStep);
                                 return <Icon className="h-5 w-5" />;
                             })()}
                             {getStepTitle(currentStep)}
                         </CardTitle>
-                        <CardDescription>
+                        <CardDescription className="text-gray-600 dark:text-slate-400">
                             {currentStep === 1 && 'Enter the location and basic information for your parking slot'}
                             {currentStep === 2 && 'Specify the physical characteristics and features of your slot'}
                             {currentStep === 3 && 'Set your pricing and availability preferences'}
@@ -588,7 +588,7 @@ export default function CreateSlot() {
                                 <div className="space-y-2">
                                     <Label htmlFor="base_hourly_rate">Base Hourly Rate (PHP) *</Label>
                                     <div className="relative">
-                                        <DollarSign className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                                        <Banknote className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                                         <Input
                                             id="base_hourly_rate"
                                             type="number"
@@ -635,15 +635,18 @@ export default function CreateSlot() {
                                     </div>
                                 </div>
 
-                                <div className="bg-muted/50 p-4 rounded-lg">
-                                    <h4 className="font-medium mb-2">Earnings Estimate</h4>
-                                    <div className="text-sm text-muted-foreground space-y-1">
+                                <div className="bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 p-4 rounded-lg">
+                                    <h4 className="font-medium mb-2 text-green-900 dark:text-green-100 flex items-center gap-2">
+                                        <Banknote className="h-4 w-4 text-green-600 dark:text-green-400" />
+                                        Earnings Estimate
+                                    </h4>
+                                    <div className="text-sm text-green-700 dark:text-green-300 space-y-1">
                                         <div>If your slot is booked 4 hours per day:</div>
-                                        <div className="font-medium text-foreground">
+                                        <div className="font-medium text-green-900 dark:text-green-100">
                                             Daily: ₱{(parseFloat(formData.base_hourly_rate) * 4 || 0).toFixed(2)} •
                                             Monthly: ₱{(parseFloat(formData.base_hourly_rate) * 4 * 30 || 0).toFixed(2)}
                                         </div>
-                                        <div className="text-xs">*Estimates before platform commission</div>
+                                        <div className="text-xs text-green-600 dark:text-green-400">*Estimates before platform commission</div>
                                     </div>
                                 </div>
                             </div>
@@ -673,9 +676,9 @@ export default function CreateSlot() {
                                     </div>
                                 </div>
 
-                                <div className="space-y-4">
-                                    <h4 className="font-medium">Review Your Slot Details</h4>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+                                <div className="space-y-4 p-4 bg-gray-50 dark:bg-slate-800/50 rounded-lg border border-gray-200 dark:border-slate-700">
+                                    <h4 className="font-medium text-gray-900 dark:text-slate-100">Review Your Slot Details</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm text-gray-700 dark:text-slate-300">
                                         <div>
                                             <span className="font-medium">Slot Number:</span> {formData.slot_number}
                                         </div>
