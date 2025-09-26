@@ -1,9 +1,10 @@
 <?php
 
+use App\Http\Controllers\QRCodeController;
 use App\Http\Controllers\Web\DashboardController;
 use App\Http\Controllers\Web\ParkingController;
+use App\Http\Controllers\Web\ScheduleManagementController;
 use App\Http\Controllers\Web\SlotManagementController;
-use App\Http\Controllers\QRCodeController;
 use Illuminate\Foundation\Application;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
@@ -26,7 +27,7 @@ Route::get('/health', function () {
         'services' => [
             'database' => \DB::connection()->getPdo() ? 'connected' : 'disconnected',
             'cache' => \Cache::store()->getStore() instanceof \Illuminate\Cache\RedisStore ? 'connected' : 'disconnected',
-        ]
+        ],
     ]);
 });
 
@@ -55,6 +56,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::put('{id}', [SlotManagementController::class, 'update'])->name('slots.update');
         Route::get('{id}/qr-code', [SlotManagementController::class, 'getQRCode'])->name('slots.qr-code');
         Route::get('{id}/qr-code/download', [SlotManagementController::class, 'downloadQRCode'])->name('slots.qr-code.download');
+    });
+
+    // Schedule management routes (for slot owners)
+    Route::prefix('schedules')->group(function () {
+        Route::get('/', [ScheduleManagementController::class, 'index'])->name('schedules.index');
+        Route::get('create', [ScheduleManagementController::class, 'create'])->name('schedules.create');
+        Route::post('/', [ScheduleManagementController::class, 'store'])->name('schedules.store');
+        Route::get('{slot}/schedules', [ScheduleManagementController::class, 'show'])->name('schedules.show');
+        Route::get('{schedule}/edit', [ScheduleManagementController::class, 'edit'])->name('schedules.edit');
+        Route::put('{schedule}', [ScheduleManagementController::class, 'update'])->name('schedules.update');
+        Route::delete('{schedule}', [ScheduleManagementController::class, 'destroy'])->name('schedules.destroy');
+        Route::post('preview', [ScheduleManagementController::class, 'preview'])->name('schedules.preview');
+        Route::post('bulk-update', [ScheduleManagementController::class, 'bulkUpdate'])->name('schedules.bulk-update');
     });
 });
 

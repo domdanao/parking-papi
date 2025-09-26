@@ -20,6 +20,9 @@ class ParkingSession extends Model
         'duration_minutes',
         'hourly_rate',
         'total_amount',
+        'rate_transitions',
+        'original_rate',
+        'final_calculated_amount',
         'payment_status',
         'payment_method',
         'status',
@@ -34,6 +37,9 @@ class ParkingSession extends Model
             'actual_end_time' => 'datetime',
             'hourly_rate' => 'decimal:2',
             'total_amount' => 'decimal:2',
+            'rate_transitions' => 'array',
+            'original_rate' => 'decimal:2',
+            'final_calculated_amount' => 'decimal:2',
         ];
     }
 

@@ -39,3 +39,7 @@ coverage.xml
 # Mobile app builds
 /mobile/expo-app/dist
 /mobile/expo-app/.expo
+
+
+#Ignore vscode AI rules
+.github/instructions/codacy.instructions.md

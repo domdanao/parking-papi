@@ -93,15 +93,15 @@ function Map({
 
                 const infoWindow = new google.maps.InfoWindow({
                     content: `
-                        <div style="padding: 8px; min-width: 200px; ${isDarkMode ?
-                            'background-color: #334155; color: #f1f5f9; border-radius: 8px;' :
+                        <div style="padding: 6px 8px; ${address ? 'min-width: 200px;' : 'min-width: auto;'} ${isDarkMode ?
+                            'background-color: #334155; color: #f1f5f9; border-radius: 6px;' :
                             'background-color: white; color: #1e293b;'
                         }">
-                            ${title ? `<h3 style="margin: 0 0 8px 0; font-size: 16px; font-weight: 600; ${isDarkMode ? 'color: #f1f5f9;' : 'color: #1e293b;'}">${title}</h3>` : ''}
-                            ${address ? `<p style="margin: 0; font-size: 14px; ${isDarkMode ? 'color: #cbd5e1;' : 'color: #666;'}">${address}</p>` : ''}
-                            <p style="margin: 4px 0 0 0; font-size: 12px; ${isDarkMode ? 'color: #94a3b8;' : 'color: #888;'}">
+                            ${title ? `<div style="margin: 0; font-size: 14px; font-weight: 600; ${isDarkMode ? 'color: #f1f5f9;' : 'color: #1e293b;'}">${title}</div>` : ''}
+                            ${address ? `<p style="margin: 8px 0 0 0; font-size: 14px; ${isDarkMode ? 'color: #cbd5e1;' : 'color: #666;'}">${address}</p>` : ''}
+                            ${address ? `<p style="margin: 4px 0 0 0; font-size: 12px; ${isDarkMode ? 'color: #94a3b8;' : 'color: #888;'}">
                                 ${center.lat.toFixed(6)}, ${center.lng.toFixed(6)}
-                            </p>
+                            </p>` : ''}
                         </div>
                     `
                 });

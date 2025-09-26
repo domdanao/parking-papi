@@ -79,4 +79,12 @@ class ParkingSlot extends Model
     {
         return $this->hasMany(QRCode::class);
     }
+
+    /**
+     * Get the parking schedules for this slot.
+     */
+    public function parkingSchedules(): HasMany
+    {
+        return $this->hasMany(ParkingSchedule::class);
+    }
 }

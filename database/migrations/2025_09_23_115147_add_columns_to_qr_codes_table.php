@@ -11,30 +11,29 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::table('qr_codes', function (Blueprint $table) {
-            // Drop existing id column and add UUID
-            $table->dropColumn('id');
-        });
+        // Drop and recreate the table to change from auto-increment ID to UUID
+        Schema::dropIfExists('qr_codes');
 
-        Schema::table('qr_codes', function (Blueprint $table) {
-            // Add UUID primary key
-            $table->uuid('id')->primary()->first();
+        Schema::create('qr_codes', function (Blueprint $table) {
+            $table->uuid('id')->primary();
 
             // Add parking slot relationship
-            $table->uuid('parking_slot_id')->after('id');
+            $table->uuid('parking_slot_id');
             $table->foreign('parking_slot_id')->references('id')->on('parking_slots')->onDelete('cascade');
 
             // QR code data
-            $table->text('qr_data')->after('parking_slot_id');
-            $table->string('qr_image_path')->nullable()->after('qr_data');
+            $table->text('qr_data');
+            $table->string('qr_image_path')->nullable();
 
             // Status and metadata
-            $table->enum('status', ['active', 'inactive', 'expired'])->default('active')->after('qr_image_path');
-            $table->timestamp('expires_at')->nullable()->after('status');
+            $table->enum('status', ['active', 'inactive', 'expired'])->default('active');
+            $table->timestamp('expires_at')->nullable();
 
             // Usage tracking
-            $table->integer('scan_count')->default(0)->after('expires_at');
-            $table->timestamp('last_scanned_at')->nullable()->after('scan_count');
+            $table->integer('scan_count')->default(0);
+            $table->timestamp('last_scanned_at')->nullable();
+
+            $table->timestamps();
 
             // Add index for faster queries
             $table->index(['parking_slot_id', 'status']);
@@ -47,25 +46,12 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::table('qr_codes', function (Blueprint $table) {
-            $table->dropForeign(['parking_slot_id']);
-            $table->dropIndex(['parking_slot_id', 'status']);
-            $table->dropIndex(['status']);
+        Schema::dropIfExists('qr_codes');
 
-            $table->dropColumn([
-                'parking_slot_id',
-                'qr_data',
-                'qr_image_path',
-                'status',
-                'expires_at',
-                'scan_count',
-                'last_scanned_at'
-            ]);
-        });
-
-        Schema::table('qr_codes', function (Blueprint $table) {
-            $table->dropColumn('id');
-            $table->id()->first();
+        // Recreate original simple table
+        Schema::create('qr_codes', function (Blueprint $table) {
+            $table->id();
+            $table->timestamps();
         });
     }
 };

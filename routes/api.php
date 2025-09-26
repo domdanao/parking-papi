@@ -1,10 +1,10 @@
 <?php
 
+use App\Http\Controllers\Api\AnalyticsController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\ParkingSlotController;
-use App\Http\Controllers\Api\QRScanningController;
 use App\Http\Controllers\Api\PaymentController;
-use App\Http\Controllers\Api\AnalyticsController;
+use App\Http\Controllers\Api\QRScanningController;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Route;
 
@@ -31,6 +31,7 @@ Route::prefix('parking-slots')->group(function () {
 // QR scanning routes
 Route::prefix('qr')->middleware('auth:sanctum')->group(function () {
     Route::post('/scan', [QRScanningController::class, 'scan']);
+    Route::get('/scan-status/{scanId}', [QRScanningController::class, 'scanStatus']);
     Route::post('/activate-payment', [QRScanningController::class, 'activatePayment']);
 });
 

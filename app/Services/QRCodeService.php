@@ -4,12 +4,12 @@ namespace App\Services;
 
 use App\Models\ParkingSlot;
 use App\Models\QRCode;
-use Illuminate\Support\Str;
-use Illuminate\Support\Facades\Storage;
-use BaconQrCode\Renderer\ImageRenderer;
 use BaconQrCode\Renderer\Image\SvgImageBackEnd;
+use BaconQrCode\Renderer\ImageRenderer;
 use BaconQrCode\Renderer\RendererStyle\RendererStyle;
 use BaconQrCode\Writer;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class QRCodeService
 {
@@ -52,27 +52,17 @@ class QRCodeService
     {
         $baseUrl = config('app.url');
 
-        // Create parking-specific QR data
+        // Create parking-specific QR data - simplified for permanent QR codes
         $qrPayload = [
             'type' => 'parking_slot',
             'slot_id' => $slot->id,
             'version' => '1.0',
-            'timestamp' => now()->timestamp,
-            'signature' => $this->generateSignature($slot->id),
         ];
 
         // Encode as URL that opens our app
         $encodedData = base64_encode(json_encode($qrPayload));
-        return $baseUrl . '/parking/scan/' . $encodedData;
-    }
 
-    /**
-     * Generate security signature for QR code
-     */
-    private function generateSignature(string $slotId): string
-    {
-        $secret = config('app.key');
-        return hash_hmac('sha256', $slotId . now()->format('Y-m-d'), $secret);
+        return $baseUrl.'/parking/scan/'.$encodedData;
     }
 
     /**
@@ -80,12 +70,12 @@ class QRCodeService
      */
     private function generateQRImage(string $qrData, string $slotId): string
     {
-        $filename = 'qr-codes/slot-' . $slotId . '.svg';
+        $filename = 'qr-codes/slot-'.$slotId.'.svg';
 
         // Generate QR code with BaconQrCode
         $renderer = new ImageRenderer(
             new RendererStyle(300, 2),
-            new SvgImageBackEnd()
+            new SvgImageBackEnd
         );
 
         $writer = new Writer($renderer);
@@ -106,24 +96,23 @@ class QRCodeService
             $decodedData = base64_decode($encodedData);
             $qrPayload = json_decode($decodedData, true);
 
-            if (!$qrPayload || !isset($qrPayload['slot_id'], $qrPayload['signature'])) {
+            if (! $qrPayload || ! isset($qrPayload['slot_id'], $qrPayload['type'])) {
                 throw new \InvalidArgumentException('Invalid QR code format');
             }
 
-            // Validate signature (optional - for enhanced security)
-            $expectedSignature = $this->generateSignature($qrPayload['slot_id']);
-            if ($qrPayload['signature'] !== $expectedSignature) {
-                // For now, just log but don't fail - signatures expire daily
-                logger()->warning('QR code signature mismatch', [
-                    'slot_id' => $qrPayload['slot_id'],
-                    'expected' => $expectedSignature,
-                    'received' => $qrPayload['signature']
-                ]);
+            // Validate QR code type
+            if ($qrPayload['type'] !== 'parking_slot') {
+                throw new \InvalidArgumentException('Invalid QR code type');
+            }
+
+            // Validate slot ID format (should be UUID)
+            if (! preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/', $qrPayload['slot_id'])) {
+                throw new \InvalidArgumentException('Invalid slot ID format');
             }
 
             return $qrPayload;
         } catch (\Exception $e) {
-            throw new \InvalidArgumentException('Failed to decode QR data: ' . $e->getMessage());
+            throw new \InvalidArgumentException('Failed to decode QR data: '.$e->getMessage());
         }
     }
 
@@ -136,7 +125,7 @@ class QRCodeService
 
         // Find the parking slot
         $slot = ParkingSlot::with(['slotOwner'])->find($qrPayload['slot_id']);
-        if (!$slot) {
+        if (! $slot) {
             throw new \InvalidArgumentException('Parking slot not found');
         }
 
@@ -191,7 +180,7 @@ class QRCodeService
      */
     private function isLocationTooFar(ParkingSlot $slot, array $location): bool
     {
-        if (!isset($location['latitude'], $location['longitude'])) {
+        if (! isset($location['latitude'], $location['longitude'])) {
             return false; // Skip validation if location data is incomplete
         }
 
@@ -216,11 +205,11 @@ class QRCodeService
         $dLat = deg2rad($lat2 - $lat1);
         $dLon = deg2rad($lon2 - $lon1);
 
-        $a = sin($dLat/2) * sin($dLat/2) +
+        $a = sin($dLat / 2) * sin($dLat / 2) +
              cos(deg2rad($lat1)) * cos(deg2rad($lat2)) *
-             sin($dLon/2) * sin($dLon/2);
+             sin($dLon / 2) * sin($dLon / 2);
 
-        $c = 2 * atan2(sqrt($a), sqrt(1-$a));
+        $c = 2 * atan2(sqrt($a), sqrt(1 - $a));
 
         return $earthRadius * $c;
     }
@@ -298,7 +287,7 @@ class QRCodeService
     {
         $qrCode = QRCode::where('parking_slot_id', $slot->id)->first();
 
-        if (!$qrCode || !$qrCode->qr_image_path) {
+        if (! $qrCode || ! $qrCode->qr_image_path) {
             return null;
         }
 

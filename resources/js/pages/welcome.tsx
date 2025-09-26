@@ -49,9 +49,9 @@ export default function Welcome() {
                                 Let's get started
                             </h1>
                             <p className="mb-2 text-[#706f6c] dark:text-[#A1A09A]">
-                                Laravel has an incredibly rich ecosystem.
+                                Welcome to Parking Papi, your parking management platform.
                                 <br />
-                                We suggest starting with the following.
+                                Get started by exploring the features below.
                             </p>
                             <ul className="mb-4 flex flex-col lg:mb-6">
                                 <li className="relative flex items-center gap-4 py-2 before:absolute before:top-1/2 before:bottom-0 before:left-[0.4rem] before:border-l before:border-[#e3e3e0] dark:before:border-[#3E3E3A]">
@@ -61,13 +61,12 @@ export default function Welcome() {
                                         </span>
                                     </span>
                                     <span>
-                                        Read the
-                                        <a
-                                            href="https://laravel.com/docs"
-                                            target="_blank"
+                                        Access the
+                                        <Link
+                                            href={dashboard()}
                                             className="ml-1 inline-flex items-center space-x-1 font-medium text-[#f53003] underline underline-offset-4 dark:text-[#FF4433]"
                                         >
-                                            <span>Documentation</span>
+                                            <span>Dashboard</span>
                                             <svg
                                                 width={10}
                                                 height={11}
@@ -82,7 +81,7 @@ export default function Welcome() {
                                                     strokeLinecap="square"
                                                 />
                                             </svg>
-                                        </a>
+                                        </Link>
                                     </span>
                                 </li>
                                 <li className="relative flex items-center gap-4 py-2 before:absolute before:top-0 before:bottom-1/2 before:left-[0.4rem] before:border-l before:border-[#e3e3e0] dark:before:border-[#3E3E3A]">
@@ -92,13 +91,12 @@ export default function Welcome() {
                                         </span>
                                     </span>
                                     <span>
-                                        Watch video tutorials at
-                                        <a
-                                            href="https://laracasts.com"
-                                            target="_blank"
+                                        Manage your
+                                        <Link
+                                            href="/slots"
                                             className="ml-1 inline-flex items-center space-x-1 font-medium text-[#f53003] underline underline-offset-4 dark:text-[#FF4433]"
                                         >
-                                            <span>Laracasts</span>
+                                            <span>Parking Slots</span>
                                             <svg
                                                 width={10}
                                                 height={11}
@@ -113,19 +111,18 @@ export default function Welcome() {
                                                     strokeLinecap="square"
                                                 />
                                             </svg>
-                                        </a>
+                                        </Link>
                                     </span>
                                 </li>
                             </ul>
                             <ul className="flex gap-3 text-sm leading-normal">
                                 <li>
-                                    <a
-                                        href="https://cloud.laravel.com"
-                                        target="_blank"
+                                    <Link
+                                        href={dashboard()}
                                         className="inline-block rounded-sm border border-black bg-[#1b1b18] px-5 py-1.5 text-sm leading-normal text-white hover:border-black hover:bg-black dark:border-[#eeeeec] dark:bg-[#eeeeec] dark:text-[#1C1C1A] dark:hover:border-white dark:hover:bg-white"
                                     >
-                                        Deploy now
-                                    </a>
+                                        Get Started
+                                    </Link>
                                 </li>
                             </ul>
                         </div>

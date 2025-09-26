@@ -223,8 +223,7 @@ export default function ShowSlot({ slot, metrics }: SlotShowProps) {
                                     location={{
                                         lat: Number(slot.latitude),
                                         lng: Number(slot.longitude),
-                                        title: `Slot ${slot.slot_number}`,
-                                        address: slot.address
+                                        title: `Slot ${slot.slot_number}`
                                     }}
                                     height="350px"
                                     showInfoWindow={true}

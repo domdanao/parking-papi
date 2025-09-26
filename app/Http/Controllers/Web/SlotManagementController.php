@@ -6,9 +6,9 @@ use App\Http\Controllers\Controller;
 use App\Models\ParkingSlot;
 use App\Services\QRCodeService;
 use Illuminate\Http\Request;
-use Symfony\Component\HttpFoundation\BinaryFileResponse;
 use Inertia\Inertia;
 use Inertia\Response;
+use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class SlotManagementController extends Controller
 {
@@ -21,12 +21,53 @@ class SlotManagementController extends Controller
             abort(403, 'Access denied. Slot owner role required.');
         }
 
-        $slots = ParkingSlot::where('slot_owner_id', $user->id)
-            ->latest()
-            ->get();
+        $query = ParkingSlot::where('slot_owner_id', $user->id);
+
+        // Handle search
+        if ($search = $request->get('search')) {
+            $query->where(function ($q) use ($search) {
+                $q->where('slot_number', 'ILIKE', "%{$search}%")
+                    ->orWhere('address', 'ILIKE', "%{$search}%")
+                    ->orWhere('landmark_references', 'ILIKE', "%{$search}%");
+            });
+        }
+
+        // Handle sorting
+        $sort = $request->get('sort', 'newest');
+        switch ($sort) {
+            case 'oldest':
+                $query->oldest();
+                break;
+            case 'slot_number':
+                $query->orderBy('slot_number');
+                break;
+            case 'address':
+                $query->orderBy('address');
+                break;
+            case 'rate_high':
+                $query->orderBy('base_hourly_rate', 'desc');
+                break;
+            case 'rate_low':
+                $query->orderBy('base_hourly_rate', 'asc');
+                break;
+            case 'status':
+                $query->orderBy('status')->latest();
+                break;
+            case 'approval':
+                $query->orderBy('approval_status')->latest();
+                break;
+            case 'newest':
+            default:
+                $query->latest();
+                break;
+        }
+
+        $slots = $query->get();
 
         return Inertia::render('slots/index', [
-            'slots' => $slots
+            'slots' => $slots,
+            'search' => $search,
+            'sort' => $sort,
         ]);
     }
 
@@ -37,7 +78,7 @@ class SlotManagementController extends Controller
 
     public function show(Request $request, string $id): Response
     {
-        $slot = ParkingSlot::with(['parkingSessions' => function($query) {
+        $slot = ParkingSlot::with(['parkingSessions' => function ($query) {
             $query->latest()->limit(10);
         }])->findOrFail($id);
 
@@ -60,7 +101,7 @@ class SlotManagementController extends Controller
                 'total_sessions' => $totalSessions,
                 'total_revenue' => $totalRevenue,
                 'occupancy_rate' => $occupancyRate,
-            ]
+            ],
         ]);
     }
 
@@ -74,7 +115,7 @@ class SlotManagementController extends Controller
         }
 
         return Inertia::render('slots/edit', [
-            'slot' => $slot
+            'slot' => $slot,
         ]);
     }
 
@@ -143,9 +184,9 @@ class SlotManagementController extends Controller
         $qrCode = $qrService->generateQRCodeForSlot($slot);
 
         // Get the QR code file path
-        $qrImagePath = storage_path('app/public/' . $qrCode->qr_image_path);
+        $qrImagePath = storage_path('app/public/'.$qrCode->qr_image_path);
 
-        if (!file_exists($qrImagePath)) {
+        if (! file_exists($qrImagePath)) {
             abort(404, 'QR code file not found.');
         }
 
@@ -168,9 +209,9 @@ class SlotManagementController extends Controller
         $qrCode = $qrService->generateQRCodeForSlot($slot);
 
         // Get the QR code file path
-        $qrImagePath = storage_path('app/public/' . $qrCode->qr_image_path);
+        $qrImagePath = storage_path('app/public/'.$qrCode->qr_image_path);
 
-        if (!file_exists($qrImagePath)) {
+        if (! file_exists($qrImagePath)) {
             abort(404, 'QR code file not found.');
         }
 

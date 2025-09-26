@@ -64,6 +64,7 @@ export interface ParkingSlot {
     distance_meters?: number;
     estimated_walk_time_minutes?: number;
     owner?: Pick<User, 'id' | 'first_name' | 'last_name'>;
+    parking_schedules_count?: number;
     created_at: string;
     updated_at: string;
 }
@@ -82,6 +83,23 @@ export interface ParkingSession {
     payment_method: string;
     status: 'pending' | 'active' | 'completed' | 'cancelled' | 'expired';
     confirmation_code: string;
+    created_at: string;
+    updated_at: string;
+}
+
+export interface ParkingSchedule {
+    id: string;
+    parking_slot_id: string;
+    schedule_type: 'availability_window' | 'pricing_tier' | 'free_period' | 'restriction_zone';
+    name: string;
+    description?: string;
+    time_rules: any; // JSON field with flexible structure
+    pricing_rules: any; // JSON field with flexible structure
+    recurrence_pattern: any; // JSON field for recurring schedules
+    effective_from: string;
+    effective_until?: string;
+    is_active: boolean;
+    priority: number;
     created_at: string;
     updated_at: string;
 }

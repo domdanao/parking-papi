@@ -1,10 +1,13 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import AppLayout from '@/layouts/app-layout';
 import { type BreadcrumbItem, type ParkingSlot } from '@/types';
-import { Head, Link } from '@inertiajs/react';
-import { Plus, MapPin, Banknote, Edit, MoreHorizontal, Building } from 'lucide-react';
+import { Head, Link, router } from '@inertiajs/react';
+import { Plus, MapPin, Banknote, Edit, MoreHorizontal, Building, Search, SortAsc, Clock } from 'lucide-react';
+import { useState, useEffect } from 'react';
 
 const breadcrumbs: BreadcrumbItem[] = [
     {
@@ -15,9 +18,48 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 interface SlotsIndexProps {
     slots: ParkingSlot[];
+    search?: string;
+    sort?: string;
 }
 
-export default function SlotsIndex({ slots }: SlotsIndexProps) {
+const SORT_OPTIONS = [
+    { value: 'newest', label: 'Newest First' },
+    { value: 'oldest', label: 'Oldest First' },
+    { value: 'slot_number', label: 'Slot Number (A-Z)' },
+    { value: 'address', label: 'Address (A-Z)' },
+    { value: 'rate_high', label: 'Highest Rate First' },
+    { value: 'rate_low', label: 'Lowest Rate First' },
+    { value: 'status', label: 'Status' },
+    { value: 'approval', label: 'Approval Status' },
+];
+
+export default function SlotsIndex({ slots, search: initialSearch = '', sort: initialSort = 'newest' }: SlotsIndexProps) {
+    const [searchQuery, setSearchQuery] = useState(initialSearch);
+    const [sortBy, setSortBy] = useState(initialSort);
+    const [debouncedSearch, setDebouncedSearch] = useState(initialSearch);
+
+    // Debounce search query
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setDebouncedSearch(searchQuery);
+        }, 300);
+
+        return () => clearTimeout(timer);
+    }, [searchQuery]);
+
+    // Update URL when search or sort changes
+    useEffect(() => {
+        const params = new URLSearchParams();
+        if (debouncedSearch) params.set('search', debouncedSearch);
+        if (sortBy !== 'newest') params.set('sort', sortBy);
+
+        const url = `/slots${params.toString() ? '?' + params.toString() : ''}`;
+        router.get(url, {}, {
+            preserveState: true,
+            preserveScroll: true,
+            replace: true
+        });
+    }, [debouncedSearch, sortBy]);
     return (
         <AppLayout breadcrumbs={breadcrumbs}>
             <Head title="My Parking Slots" />
@@ -27,12 +69,49 @@ export default function SlotsIndex({ slots }: SlotsIndexProps) {
                         <h1 className="text-3xl font-bold text-gray-900 dark:text-slate-100">My Parking Slots</h1>
                         <p className="text-gray-600 dark:text-slate-300">Manage your parking slots and track performance</p>
                     </div>
-                    <Link href="/slots/create">
-                        <Button className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white shadow-sm">
-                            <Plus className="mr-2 h-4 w-4" />
-                            Add New Slot
-                        </Button>
-                    </Link>
+                    <div className="flex gap-3">
+                        <Link href="/schedules">
+                            <Button variant="outline" className="bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-700">
+                                <Clock className="mr-2 h-4 w-4" />
+                                Manage Schedules
+                            </Button>
+                        </Link>
+                        <Link href="/slots/create">
+                            <Button className="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white shadow-sm">
+                                <Plus className="mr-2 h-4 w-4" />
+                                Add New Slot
+                            </Button>
+                        </Link>
+                    </div>
+                </div>
+
+                {/* Search and Sort Controls */}
+                <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                    <div className="relative flex-1 max-w-md">
+                        <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 dark:text-slate-500 h-4 w-4" />
+                        <Input
+                            type="text"
+                            placeholder="Search slots by number, address, or location..."
+                            value={searchQuery}
+                            onChange={(e) => setSearchQuery(e.target.value)}
+                            className="pl-10 bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-600"
+                        />
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <SortAsc className="h-4 w-4 text-gray-500 dark:text-slate-400" />
+                        <Select value={sortBy} onValueChange={setSortBy}>
+                            <SelectTrigger className="w-48 bg-white dark:bg-slate-800 border-gray-300 dark:border-slate-600">
+                                <SelectValue placeholder="Sort by..." />
+                            </SelectTrigger>
+                            <SelectContent>
+                                {SORT_OPTIONS.map(option => (
+                                    <SelectItem key={option.value} value={option.value}>
+                                        {option.label}
+                                    </SelectItem>
+                                ))}
+                            </SelectContent>
+                        </Select>
+                    </div>
                 </div>
 
                 {slots.length === 0 ? (
@@ -144,7 +223,7 @@ function SlotCard({ slot }: { slot: ParkingSlot }) {
                     </div>
                 )}
 
-                <div className="flex gap-2 pt-2">
+                <div className="flex gap-1 pt-2">
                     <Link href={`/slots/${slot.id}`} className="flex-1">
                         <Button variant="outline" size="sm" className="w-full bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-600">
                             <Building className="mr-1 h-3 w-3" />
@@ -155,6 +234,12 @@ function SlotCard({ slot }: { slot: ParkingSlot }) {
                         <Button variant="outline" size="sm" className="w-full bg-white dark:bg-slate-700 border-gray-300 dark:border-slate-600 text-gray-700 dark:text-slate-200 hover:bg-gray-50 dark:hover:bg-slate-600">
                             <Edit className="mr-1 h-3 w-3" />
                             Edit
+                        </Button>
+                    </Link>
+                    <Link href={`/schedules/${slot.id}/schedules`} className="flex-1">
+                        <Button variant="outline" size="sm" className="w-full bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-700 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-800/50">
+                            <Clock className="mr-1 h-3 w-3" />
+                            Schedule
                         </Button>
                     </Link>
                     <Button variant="ghost" size="sm" className="text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-600">
