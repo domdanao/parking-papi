@@ -6,6 +6,15 @@
                 "artisan",
                 "boost:mcp"
             ]
+        },
+        "magpie": {
+            "command": "npx",
+            "args": ["-y", "magpie-mcp-server"],
+            "env": {
+                "MAGPIE_PUBLIC_KEY": "pk_live_1a3ftLNXxNLkFL1wbZJNgP",
+                "MAGPIE_SECRET_KEY": "sk_live_wzOxyVue6Zw3rRGjlcA4o7",
+                "MAGPIE_TEST_MODE": "false"
+            }
         }
     }
 }

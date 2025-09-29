@@ -31,8 +31,16 @@ Route::get('/health', function () {
     ]);
 });
 
-// Public QR Code scanning route - no authentication required
-Route::get('parking/scan/{encodedData}', [QRCodeController::class, 'handleScan'])->name('parking.scan');
+// Public QR Code scanning and booking routes - no authentication required
+Route::prefix('parking')->group(function () {
+    Route::get('scan/{encodedData}', [QRCodeController::class, 'handleScan'])->name('parking.scan');
+    Route::post('scan', [QRCodeController::class, 'processScan'])->name('parking.scan.process');
+    Route::post('book', [QRCodeController::class, 'bookSlot'])->name('parking.book');
+
+    // Payment handling routes
+    Route::get('payment/success', [QRCodeController::class, 'paymentSuccess'])->name('parking.payment.success');
+    Route::get('payment/cancel', [QRCodeController::class, 'paymentCancel'])->name('parking.payment.cancel');
+});
 
 Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('dashboard', [DashboardController::class, 'index'])->name('dashboard');
@@ -41,10 +49,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::prefix('parking')->group(function () {
         Route::get('search', [ParkingController::class, 'search'])->name('parking.search');
         Route::get('{id}', [ParkingController::class, 'show'])->name('parking.show');
-
-        // QR Code processing and booking - require authentication
-        Route::post('scan', [QRCodeController::class, 'processScan'])->name('parking.scan.process');
-        Route::post('book', [QRCodeController::class, 'bookSlot'])->name('parking.book');
     });
 
     // Slot management routes (for slot owners)

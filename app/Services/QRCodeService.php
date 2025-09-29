@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\ParkingSlot;
 use App\Models\QRCode;
+use App\Services\PricingService;
 use BaconQrCode\Renderer\Image\SvgImageBackEnd;
 use BaconQrCode\Renderer\ImageRenderer;
 use BaconQrCode\Renderer\RendererStyle\RendererStyle;
@@ -13,6 +14,9 @@ use Illuminate\Support\Str;
 
 class QRCodeService
 {
+    public function __construct(
+        private PricingService $pricingService
+    ) {}
     /**
      * Generate QR code for a parking slot
      */
@@ -152,25 +156,35 @@ class QRCodeService
         return [
             'slot' => [
                 'id' => $slot->id,
+                'slot_number' => $slot->slot_number,
                 'status' => $slot->status,
                 'base_hourly_rate' => $slot->base_hourly_rate,
                 'location' => [
                     'latitude' => $slot->latitude,
                     'longitude' => $slot->longitude,
                 ],
+                'address' => $slot->address,
+                'landmark_references' => $slot->landmark_references,
                 'description' => $slot->address ?? $slot->landmark_references ?? 'Parking Location',
-                'features' => $slot->features ?? [],
+                'amenities' => $slot->amenities ?? [],
+                'vehicle_compatibility' => $slot->vehicle_compatibility ?? [],
+                'surface_type' => $slot->surface_type,
+                'dimensions' => $slot->dimensions,
+                'minimum_duration_minutes' => $slot->minimum_duration_minutes,
+                'maximum_duration_minutes' => $slot->maximum_duration_minutes,
                 'owner' => [
-                    'name' => $slot->slotOwner->name ?? 'Parking Operator',
+                    'id' => $slot->slotOwner->id,
+                    'name' => $slot->slotOwner->name,
+                    'email' => $slot->slotOwner->email,
                 ],
                 'area' => [
-                    'name' => 'Parking Area', // Default since area relationship doesn't exist yet
+                    'name' => $this->getAreaNameFromAddress($slot->address), // Extract area from address
                 ],
             ],
             'session_token' => $sessionToken,
             'expires_at' => now()->addMinutes(5)->toISOString(), // 5-minute booking window
             'scan_location' => $location,
-            'terms_url' => url('/terms-and-conditions'),
+            'terms_url' => config('app.url') . '/terms-and-conditions',
             'pricing_info' => $this->calculatePricing($slot),
         ];
     }
@@ -230,24 +244,26 @@ class QRCodeService
     }
 
     /**
-     * Calculate pricing information for the slot
+     * Calculate pricing information for the slot using dynamic pricing
      */
     private function calculatePricing(ParkingSlot $slot): array
     {
-        $baseRate = $slot->base_hourly_rate;
+        $rateInfo = $this->pricingService->getCurrentRateInfo($slot);
+        $currentRate = $rateInfo['current_rate'];
+        $baseRate = $rateInfo['base_rate'];
 
         return [
-            'hourly_rate' => $baseRate,
-            'minimum_charge' => $baseRate, // 1 hour minimum
-            'daily_rate' => $baseRate * 24 * 0.8, // 20% discount for full day
+            'current_hourly_rate' => $currentRate,
+            'base_hourly_rate' => $baseRate,
+            'is_surge_pricing' => $rateInfo['is_surge_pricing'],
+            'rate_change_coming' => $rateInfo['rate_change_coming'],
+            'next_hour_rate' => $rateInfo['next_hour_rate'],
+            'minimum_charge' => $currentRate, // 1 hour minimum at current rate
             'currency' => 'PHP',
-            'examples' => [
-                '1 hour' => $baseRate,
-                '2 hours' => $baseRate * 2,
-                '4 hours' => $baseRate * 4,
-                '8 hours' => $baseRate * 8,
-                'Full day (24h)' => $baseRate * 24 * 0.8,
-            ],
+            'examples' => $rateInfo['examples'],
+            'pricing_note' => $rateInfo['is_surge_pricing']
+                ? 'Current rate is higher than base rate due to peak hours'
+                : 'Standard pricing applies',
         ];
     }
 
@@ -292,5 +308,35 @@ class QRCodeService
         }
 
         return Storage::disk('public')->url($qrCode->qr_image_path);
+    }
+
+    /**
+     * Extract area name from address
+     */
+    private function getAreaNameFromAddress(?string $address): string
+    {
+        if (!$address) {
+            return 'Parking Area';
+        }
+
+        // Try to extract area name from common address patterns
+        if (str_contains($address, 'BGC')) {
+            return 'Bonifacio Global City';
+        }
+        if (str_contains($address, 'Makati')) {
+            return 'Makati CBD';
+        }
+        if (str_contains($address, 'Ortigas')) {
+            return 'Ortigas Center';
+        }
+        if (str_contains($address, 'Alabang')) {
+            return 'Alabang';
+        }
+        if (str_contains($address, 'QC') || str_contains($address, 'Quezon')) {
+            return 'Quezon City';
+        }
+
+        // Default fallback
+        return 'Metro Manila';
     }
 }

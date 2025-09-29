@@ -85,6 +85,14 @@ class ScheduleManagementController extends Controller
     {
         $slotIds = $request->get('slots', []);
 
+        // Handle both string and array inputs for slots parameter
+        if (is_string($slotIds)) {
+            $slotIds = explode(',', $slotIds);
+        }
+
+        // Remove empty values and ensure we have clean slot IDs
+        $slotIds = array_filter((array) $slotIds);
+
         if (! empty($slotIds)) {
             $slots = ParkingSlot::whereIn('id', $slotIds)
                 ->where('slot_owner_id', auth()->id())
